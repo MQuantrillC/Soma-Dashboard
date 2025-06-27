@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { fetchSheetData, type SheetData, type SheetRow } from '../utils/fetchSheetsData';
+import { fetchSheetData } from '../utils/fetchSheetsData';
 
 export default function HomePage() {
   const [totalIncome, setTotalIncome] = useState<number>(0);

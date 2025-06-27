@@ -7,7 +7,6 @@ import { fetchSheetData, fetchExchangeRate, type SheetData, type SheetRow } from
 
 export default function ExpensesPage() {
   const [data, setData] = useState<SheetData | null>(null);
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -16,13 +15,11 @@ export default function ExpensesPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [expensesData, rate] = await Promise.all([
+        const [expensesData] = await Promise.all([
           fetchSheetData('Expenses Data'),
-          fetchExchangeRate()
         ]);
         
         setData(expensesData);
-        setExchangeRate(rate);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
