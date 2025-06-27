@@ -77,7 +77,7 @@ export default function Home() {
               <p className="body-text mb-6" style={{ color: '#015965' }}>
                 View and analyze all company expenses with detailed breakdowns by date, category, and payment method.
               </p>
-              <div className="flex items-center button-text group-hover:translate-x-1 transition-transform" style={{ color: '#015965' }}>
+              <div className="flex items-center button-text group-hover:translate-x-1 transition-transform font-bold text-lg" style={{ color: '#015965' }}>
                 View Expenses
                 <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -107,7 +107,7 @@ export default function Home() {
               <p className="body-text mb-6" style={{ color: '#015965' }}>
                 Track sales performance, revenue trends, and customer insights with comprehensive data analysis.
               </p>
-              <div className="flex items-center button-text group-hover:translate-x-1 transition-transform" style={{ color: '#015965' }}>
+              <div className="flex items-center button-text group-hover:translate-x-1 transition-transform font-bold text-lg" style={{ color: '#015965' }}>
                 View Sales Data
                 <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

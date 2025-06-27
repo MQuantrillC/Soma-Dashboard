@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { fetchSheetData, fetchExchangeRate, type SheetData, type SheetRow } from '../../utils/fetchSheetsData';
 
 export default function ExpensesPage() {
@@ -9,6 +10,7 @@ export default function ExpensesPage() {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,6 +31,21 @@ export default function ExpensesPage() {
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const formatCurrency = (value: string | number | null, currency: 'USD' | 'PEN') => {
@@ -152,6 +169,70 @@ export default function ExpensesPage() {
 
   const totals = calculateTotals();
 
+  // Calculate monthly summaries
+  const calculateMonthlySummary = () => {
+    if (!data || !data.rows.length) {
+      return {};
+    }
+
+    const dateHeader = data.headers.find(h => h.trim().toLowerCase().includes('fecha') || h.trim().toLowerCase().includes('date'));
+    const usdHeader = data.headers.find(h => h.trim().toUpperCase() === 'USD' || h.trim().toUpperCase().includes('DOLLAR'));
+    const penHeader = data.headers.find(h => h.trim().toUpperCase() === 'PEN' || h.trim().toUpperCase().includes('SOL'));
+    const totalPenHeader = data.headers.find(h => h.trim().toUpperCase() === 'TOTAL PEN');
+
+    if (!dateHeader || (!usdHeader && !penHeader && !totalPenHeader)) {
+      return {};
+    }
+
+    const monthlySummary: { [month: string]: { usd: number, pen: number, local: number } } = {};
+
+    data.rows.forEach(row => {
+      const dateValue = row[dateHeader];
+      if (!dateValue) return;
+
+      let date;
+      if (typeof dateValue === 'string' && dateValue.startsWith('Date(')) {
+        const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (match) {
+          date = new Date(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+        } else {
+          return;
+        }
+      } else {
+        date = new Date(dateValue);
+      }
+
+      if (isNaN(date.getTime())) return;
+
+      const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+      if (!monthlySummary[monthYear]) {
+        monthlySummary[monthYear] = { usd: 0, pen: 0, local: 0 };
+      }
+
+      const getNumericValue = (value: SheetRow[string]) => {
+        if (value === null || value === undefined) return 0;
+        const num = parseFloat(value.toString().replace(/[^\d.-]/g, ''));
+        return isNaN(num) ? 0 : num;
+      };
+      
+      if (usdHeader) monthlySummary[monthYear].usd += getNumericValue(row[usdHeader]);
+      if (penHeader) monthlySummary[monthYear].pen += getNumericValue(row[penHeader]);
+      if (totalPenHeader) monthlySummary[monthYear].local += getNumericValue(row[totalPenHeader]);
+    });
+
+    return monthlySummary;
+  };
+
+  const monthlySummary = calculateMonthlySummary();
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
@@ -200,6 +281,7 @@ export default function ExpensesPage() {
                 ← Back to Dashboard
               </Link>
               <div className="h-6 w-px" style={{ backgroundColor: 'var(--soma-lavanda)' }}></div>
+              <Image src="/Assets/Soma_Logo_Black.png" alt="Soma Logo" width={32} height={32} />
               <h1 className="heading-h1 font-bold" style={{ color: '#015965' }}>Expenses</h1>
             </div>
             {exchangeRate && (
@@ -275,6 +357,35 @@ export default function ExpensesPage() {
           </div>
         )}
 
+        {/* Monthly Summary Section */}
+        {Object.keys(monthlySummary).length > 0 && (
+          <div className="mb-8 p-6 border-2 rounded-xl shadow-lg" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
+            <h2 className="heading-h2 mb-4 font-bold text-xl" style={{ color: '#015965' }}>Monthly Summary</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: '#015965' }}>
+                    <th className="text-left py-3 pr-3 button-text" style={{ color: '#015965' }}>Month</th>
+                    <th className="text-right py-3 px-3 button-text" style={{ color: '#015965' }}>USD Paid</th>
+                    <th className="text-right py-3 px-3 button-text" style={{ color: '#015965' }}>PEN Paid</th>
+                    <th className="text-right py-3 pl-3 button-text" style={{ color: '#015965' }}>Total Local Currency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(monthlySummary).map(([month, summary]) => (
+                    <tr key={month} className="border-b" style={{ borderColor: '#015965' }}>
+                      <td className="text-left py-3 pr-3 body-text" style={{ color: '#015965' }}>{month}</td>
+                      <td className="text-right py-3 px-3 body-text" style={{ color: '#015965' }}>{formatCurrency(summary.usd, 'USD')}</td>
+                      <td className="text-right py-3 px-3 body-text" style={{ color: '#015965' }}>{formatCurrency(summary.pen, 'PEN')}</td>
+                      <td className="text-right py-3 pl-3 body-text" style={{ color: '#015965' }}>{formatCurrency(summary.local, 'PEN')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {data && data.rows.length > 0 ? (
           <div className="rounded-xl shadow-lg overflow-hidden border-2" style={{ 
             backgroundColor: 'var(--soma-blanco)', 
@@ -282,13 +393,13 @@ export default function ExpensesPage() {
           }}>
             <div className="overflow-x-auto p-6">
               <table className="min-w-full">
-                <thead style={{ backgroundColor: '#015965' }}>
+                <thead>
                   <tr>
                     {data.headers.map((header, index) => (
                       <th 
                         key={index}
-                        className="px-4 py-4 text-left small-text font-bold uppercase tracking-wider whitespace-nowrap border-b-2"
-                        style={{ color: '#2FFFCC', borderColor: '#2FFFCC' }}
+                        className="sticky top-0 px-4 py-4 text-left small-text font-bold uppercase tracking-wider whitespace-nowrap border-b-2"
+                        style={{ color: '#2FFFCC', borderColor: '#2FFFCC', backgroundColor: '#015965' }}
                       >
                         {header}
                       </th>
@@ -323,6 +434,18 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 p-3 rounded-full shadow-lg transition-opacity hover:opacity-90 z-20"
+          style={{ backgroundColor: 'var(--soma-petroleo)', color: 'var(--soma-aquamarina)' }}
+          aria-label="Go to top"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 } 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { fetchSheetData, fetchExchangeRate, type SheetData } from '../../utils/fetchSheetsData';
 
 export default function SalesPage() {
@@ -9,6 +10,7 @@ export default function SalesPage() {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,6 +31,21 @@ export default function SalesPage() {
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Add scroll synchronization
@@ -60,32 +77,51 @@ export default function SalesPage() {
 
   const formatDate = (dateValue: string | number | null) => {
     if (!dateValue) return '-';
-    
-    // Handle Google Sheets Date format like "Date(2025,0,4)"
+
+    // Handle Google Sheets Date format like "Date(2025,4,31,17,52,59)"
     if (typeof dateValue === 'string' && dateValue.startsWith('Date(')) {
-      const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
-      if (match) {
-        const year = parseInt(match[1]);
-        const month = parseInt(match[2]); // Google Sheets uses 0-based months
-        const day = parseInt(match[3]);
-        const date = new Date(year, month, day);
-        return date.toLocaleDateString('en-GB', {
+      const parts = dateValue.substring(5, dateValue.length - 1).split(',');
+      if (parts.length >= 3) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]); // Google Sheets month is 0-based
+        const day = parseInt(parts[2]);
+        const hour = parts.length > 3 ? parseInt(parts[3]) : 0;
+        const minute = parts.length > 4 ? parseInt(parts[4]) : 0;
+        const second = parts.length > 5 ? parseInt(parts[5]) : 0;
+        
+        const date = new Date(Date.UTC(year, month, day, hour, minute, second));
+
+        if (isNaN(date.getTime())) {
+          return dateValue.toString();
+        }
+
+        // Format to 'DD Mon YYYY, HH:mm'
+        return date.toLocaleString('en-GB', {
           day: '2-digit',
           month: 'short',
-          year: 'numeric'
-        });
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'UTC'
+        }).replace(',', '');
       }
     }
-    
+
     // Handle regular date formats
-    const date = new Date(dateValue);
-    if (isNaN(date.getTime())) return dateValue; // Return original if can't parse
-    
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) {
+        return dateValue.toString();
+      }
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return dateValue.toString();
+    }
   };
 
   const formatValue = (value: string | number | null, header: string) => {
@@ -173,6 +209,19 @@ export default function SalesPage() {
       }
     });
     
+    // Ensure all sizes from 6 to 13 are present for each color
+    const allSizes = Array.from({ length: 13 - 6 + 1 }, (_, i) => `Size ${i + 6}`);
+    const detectedColors = Object.keys(colorSizeCorrelation);
+
+    detectedColors.forEach(color => {
+      const existingSizes = colorSizeCorrelation[color];
+      const completeSizes: { [key: string]: number } = {};
+      allSizes.forEach(size => {
+        completeSizes[size] = existingSizes[size] || 0;
+      });
+      colorSizeCorrelation[color] = completeSizes;
+    });
+
     // Calculate totals for percentages
     const totalColorsSold = Object.values(ringColors).reduce((sum, count) => sum + count, 0);
     const totalSizesSold = Object.values(ringSizes).reduce((sum, count) => sum + count, 0);
@@ -190,6 +239,13 @@ export default function SalesPage() {
   };
 
   const salesData = calculateSalesData();
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   if (loading) {
     return (
@@ -239,6 +295,7 @@ export default function SalesPage() {
                 ← Back to Dashboard
               </Link>
               <div className="h-6 w-px" style={{ backgroundColor: 'var(--soma-lavanda)' }}></div>
+              <Image src="/Assets/Soma_Logo_Black.png" alt="Soma Logo" width={32} height={32} />
               <h1 className="heading-h1 font-bold" style={{ color: '#015965' }}>Sales Data</h1>
             </div>
             {exchangeRate && (
@@ -313,8 +370,12 @@ export default function SalesPage() {
                       <div key={color} className="flex items-center justify-between">
                         <div className="flex items-center">
                           <div className={`w-4 h-4 rounded-full mr-3`} style={{
-                            backgroundColor: color === 'Black' ? '#051F22' : 
-                                           color === 'Silver' ? '#D4C4FC' : '#015965'
+                            border: `2px solid ${
+                              color === 'Black' ? '#051F22' :
+                              color === 'Silver' ? '#C0C0C0' :
+                              color === 'Rose Gold' ? '#E0BFB8' :
+                              '#015965'
+                            }`
                           }}></div>
                           <span className="body-text" style={{ color: '#015965' }}>Soma Ring - {color}</span>
                         </div>
@@ -370,8 +431,12 @@ export default function SalesPage() {
                   }}>
                     <div className="flex items-center mb-4">
                        <div className={`w-6 h-6 rounded-full mr-3`} style={{
-                         backgroundColor: color === 'Black' ? '#051F22' : 
-                                        color === 'Silver' ? '#D4C4FC' : '#015965'
+                         border: `3px solid ${
+                           color === 'Black' ? '#051F22' :
+                           color === 'Silver' ? '#C0C0C0' :
+                           color === 'Rose Gold' ? '#E0BFB8' :
+                           '#015965'
+                         }`
                        }}></div>
                       <h4 className="text-2xl font-bold" style={{ color: '#015965' }}>
                         {color} Rings
@@ -419,13 +484,13 @@ export default function SalesPage() {
             
             <div className="overflow-x-auto px-6 pb-6" id="sales-table-container">
               <table className="min-w-full">
-                <thead style={{ backgroundColor: '#015965' }}>
+                <thead>
                   <tr>
                     {data.headers.map((header, index) => (
                       <th 
                         key={index}
-                        className="px-4 py-4 text-left small-text font-bold uppercase tracking-wider whitespace-nowrap border-b-2"
-                        style={{ color: '#2FFFCC', borderColor: '#2FFFCC' }}
+                        className="sticky top-0 px-4 py-4 text-left small-text font-bold uppercase tracking-wider whitespace-nowrap border-b-2"
+                        style={{ color: '#2FFFCC', borderColor: '#2FFFCC', backgroundColor: '#015965' }}
                       >
                         {header}
                       </th>
@@ -460,6 +525,18 @@ export default function SalesPage() {
           </div>
         )}
       </div>
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 p-3 rounded-full shadow-lg transition-opacity hover:opacity-90 z-20"
+          style={{ backgroundColor: 'var(--soma-petroleo)', color: 'var(--soma-aquamarina)' }}
+          aria-label="Go to top"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 } 
