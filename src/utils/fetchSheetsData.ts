@@ -67,7 +67,7 @@ export async function fetchSheetData(
     let data;
     try {
       data = JSON.parse(jsonText);
-    } catch (_parseError) {
+    } catch {
       console.error('Failed to parse JSON from Google Sheets response:', jsonText);
       throw new Error('Failed to parse JSON response from Google Sheets.');
     }
