@@ -15,6 +15,20 @@ export interface SheetData {
   rows: SheetRow[];
 }
 
+interface GSheetCol {
+  id: string;
+  label: string;
+  type: string;
+}
+
+interface GSheetCell {
+  v: string | number | null;
+}
+
+interface GSheetRow {
+  c: GSheetCell[] | null;
+}
+
 /**
  * Fetches data from a specific sheet in the Google Sheets document
  * @param sheetName - The name of the sheet to fetch data from
@@ -53,7 +67,7 @@ export async function fetchSheetData(
     let data;
     try {
       data = JSON.parse(jsonText);
-    } catch (e) {
+    } catch (parseError) {
       console.error('Failed to parse JSON from Google Sheets response:', jsonText);
       throw new Error('Failed to parse JSON response from Google Sheets.');
     }
@@ -63,18 +77,20 @@ export async function fetchSheetData(
     }
 
     const table = data.table;
-    const headers: string[] = table.cols.map((col: any) => col.label || col.id || '');
+    const headers: string[] = table.cols.map((col: GSheetCol) => col.label || col.id || '');
     const rows: SheetRow[] = [];
 
     if (table.rows) {
-      table.rows.forEach((row: any) => {
+      table.rows.forEach((row: GSheetRow) => {
         const rowData: SheetRow = {};
-        row.c.forEach((cell: any, index: number) => {
-          const header = headers[index];
-          if (header) {
-            rowData[header] = cell ? (cell.v !== null ? cell.v : null) : null;
-          }
-        });
+        if (row.c) {
+          row.c.forEach((cell: GSheetCell | null, index: number) => {
+            const header = headers[index];
+            if (header) {
+              rowData[header] = cell ? (cell.v !== null ? cell.v : null) : null;
+            }
+          });
+        }
         rows.push(rowData);
       });
     }

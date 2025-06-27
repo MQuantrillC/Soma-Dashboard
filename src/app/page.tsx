@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { fetchExchangeRate } from '../utils/fetchSheetsData';
 
@@ -22,10 +23,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center space-x-4">
-              <img 
+              <Image 
                 src="/Assets/Soma_Written_Logo.png" 
                 alt="Soma Dashboard" 
-                className="h-8"
+                width={128}
+                height={32}
+                className="h-8 w-auto"
               />
             </div>
             
@@ -47,7 +50,7 @@ export default function Home() {
             Business Dashboard
           </h1>
           <p className="body-text max-w-2xl mx-auto" style={{ color: 'var(--soma-petroleo)' }}>
-            Monitor your company's financial data with real-time insights from Google Sheets
+            Monitor your company&apos;s financial data with real-time insights from Google Sheets
           </p>
         </div>
 

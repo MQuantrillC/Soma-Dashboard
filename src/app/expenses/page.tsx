@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { fetchSheetData, fetchExchangeRate, type SheetData } from '../../utils/fetchSheetsData';
+import { fetchSheetData, fetchExchangeRate, type SheetData, type SheetRow } from '../../utils/fetchSheetsData';
 
 export default function ExpensesPage() {
   const [data, setData] = useState<SheetData | null>(null);
@@ -115,7 +115,7 @@ export default function ExpensesPage() {
   
     data.rows.forEach(row => {
       // Helper function to extract numeric value from currency strings
-      const getCurrencyValue = (value: any, currency: 'USD' | 'PEN') => {
+      const getCurrencyValue = (value: SheetRow[string]) => {
         if (value === null || value === undefined) return 0;
         
         const str = value.toString().trim();
@@ -133,13 +133,13 @@ export default function ExpensesPage() {
       };
   
       if (usdHeader) {
-        totalUSD += getCurrencyValue(row[usdHeader], 'USD');
+        totalUSD += getCurrencyValue(row[usdHeader]);
       }
       if (penHeader) {
-        totalPEN += getCurrencyValue(row[penHeader], 'PEN');
+        totalPEN += getCurrencyValue(row[penHeader]);
       }
       if (totalPenHeader) {
-        totalLocal += getCurrencyValue(row[totalPenHeader], 'PEN');
+        totalLocal += getCurrencyValue(row[totalPenHeader]);
       }
     });
   
