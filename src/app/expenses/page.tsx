@@ -235,189 +235,140 @@ export default function ExpensesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--soma-aquamarina)' }}></div>
-            <span className="ml-4 body-text" style={{ color: 'var(--soma-petroleo)' }}>Loading expenses data...</span>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Image src="/Assets/Soma_Logo.png" alt="Loading..." width={80} height={80} className="animate-spin-logo" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="border rounded-xl p-6" style={{ backgroundColor: 'var(--soma-lavanda)', borderColor: 'var(--soma-petroleo)', opacity: 0.9 }}>
-            <h2 className="heading-h2 mb-2" style={{ color: 'var(--soma-negro)' }}>Error Loading Data</h2>
-            <p className="body-text mb-4" style={{ color: 'var(--soma-petroleo)' }}>{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="button-text px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: 'var(--soma-pino)', color: 'white' }}
-            >
-              Retry
-            </button>
-          </div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="max-w-7xl mx-auto p-8 text-center">
+          <p className="text-red-500 text-lg">Error: {error}</p>
+          <p className="text-gray-400 mt-2">Could not fetch expenses data. Please try again later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="button-text hover:opacity-80 transition-opacity px-4 py-2 rounded-lg border-2" style={{ 
-                color: '#015965', 
-                borderColor: '#015965',
-                backgroundColor: 'transparent'
-              }}>
-                ← Back to Dashboard
-              </Link>
-              <div className="h-6 w-px" style={{ backgroundColor: 'var(--soma-lavanda)' }}></div>
-              <Image src="/Assets/Soma_Logo_Black.png" alt="Soma Logo" width={32} height={32} />
-              <h1 className="heading-h1 font-bold" style={{ color: '#015965' }}>Expenses</h1>
-            </div>
-            {exchangeRate && (
-              <div className="px-4 py-2 border-2 rounded" style={{ 
-                borderColor: '#015965', 
-                color: '#015965',
-                backgroundColor: 'transparent'
-              }}>
-                <span className="button-text">
-                  USD/PEN: {exchangeRate.toFixed(4)}
-                </span>
-              </div>
-            )}
+      <header className="py-6 px-4 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={50} height={50} />
+            <h1 className="ml-4 text-3xl font-bold">Expenses Data</h1>
           </div>
+          <nav className="flex items-center space-x-4">
+            <Link href="/" className="px-4 py-2 rounded-lg border border-gray-600 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-colors">
+              Home
+            </Link>
+            <Link href="/sales" className="px-4 py-2 rounded-lg border border-gray-600 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-colors">
+              Sales
+            </Link>
+          </nav>
         </div>
-      </div>
+      </header>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto p-8">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Totals Section */}
         {data && data.rows.length > 0 && (
-          <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Total USD Expenses */}
-            <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#015965' }}>
-                    <span className="button-text font-bold" style={{ color: '#2FFFCC' }}>$</span>
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4 text-white">Total Expenses</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <div className="flex items-center">
+                  <h3 className="text-lg font-semibold text-gray-300">Total (USD)</h3>
+                  <div className="relative group ml-2">
+                    <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
+                    <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      Total expenses paid in USD
+                    </div>
                   </div>
                 </div>
-                <div className="ml-4">
-                  <p className="small-text" style={{ color: '#015965' }}>Total USD Expenses</p>
-                  <p className="text-3xl font-bold" style={{ color: '#015965' }}>
-                    {formatCurrency(totals.totalUSD, 'USD')}
-                  </p>
-                </div>
+                <p className="text-3xl font-bold text-white mt-2">${totals.totalUSD.toLocaleString()}</p>
               </div>
-            </div>
-
-            {/* Total PEN Expenses */}
-            <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#015965' }}>
-                    <span className="button-text font-bold" style={{ color: '#2FFFCC' }}>S/</span>
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <div className="flex items-center">
+                  <h3 className="text-lg font-semibold text-gray-300">Total (PEN)</h3>
+                  <div className="relative group ml-2">
+                    <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
+                    <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      Total expenses paid in PEN
+                    </div>
                   </div>
                 </div>
-                <div className="ml-4">
-                  <p className="small-text" style={{ color: '#015965' }}>Total PEN Expenses</p>
-                  <p className="text-3xl font-bold" style={{ color: '#015965' }}>
-                    {formatCurrency(totals.totalPEN, 'PEN')}
-                  </p>
-                </div>
+                <p className="text-3xl font-bold text-white mt-2">S/{totals.totalPEN.toLocaleString()}</p>
               </div>
-            </div>
-
-            {/* Total Local Currency */}
-            <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#015965' }}>
-                     <span className="button-text font-bold" style={{ color: '#2FFFCC' }}>S/</span>
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <div className="flex items-center">
+                  <h3 className="text-lg font-semibold text-gray-300">Total (Local PEN)</h3>
+                   <div className="relative group ml-2">
+                    <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
+                    <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      Total expenses paid in USD + Total expenses paid in PEN converted to the local currency (PEN)
+                    </div>
                   </div>
                 </div>
-                <div className="ml-4">
-                  <p className="small-text" style={{ color: '#015965' }}>Total Local Currency</p>
-                  <p className="text-3xl font-bold" style={{ color: '#015965' }}>
-                    {formatCurrency(totals.totalLocal, 'PEN')}
-                  </p>
-                </div>
+                <p className="text-3xl font-bold text-white mt-2">S/{totals.totalLocal.toLocaleString()}</p>
               </div>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Monthly Summary Section */}
+        {/* Monthly Summary */}
         {Object.keys(monthlySummary).length > 0 && (
-          <div className="mb-8 p-6 border-2 rounded-xl shadow-lg" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-            <h2 className="heading-h2 mb-4 font-bold text-xl" style={{ color: '#015965' }}>Monthly Summary</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b" style={{ borderColor: '#015965' }}>
-                    <th className="text-left py-3 pr-3 button-text" style={{ color: '#015965' }}>Month</th>
-                    <th className="text-right py-3 px-3 button-text" style={{ color: '#015965' }}>USD Paid</th>
-                    <th className="text-right py-3 px-3 button-text" style={{ color: '#015965' }}>PEN Paid</th>
-                    <th className="text-right py-3 pl-3 button-text" style={{ color: '#015965' }}>Total Local Currency</th>
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4 text-white">Monthly Summary</h2>
+            <div className="overflow-x-auto bg-gray-800 rounded-lg">
+              <table className="min-w-full text-left text-sm text-gray-300">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th scope="col" className="p-4">Month</th>
+                    <th scope="col" className="p-4 text-right">USD Paid</th>
+                    <th scope="col" className="p-4 text-right">PEN Paid</th>
+                    <th scope="col" className="p-4 text-right">Total Local Currency</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-700">
                   {Object.entries(monthlySummary).map(([month, summary]) => (
-                    <tr key={month} className="border-b" style={{ borderColor: '#015965' }}>
-                      <td className="text-left py-3 pr-3 body-text" style={{ color: '#015965' }}>{month}</td>
-                      <td className="text-right py-3 px-3 body-text" style={{ color: '#015965' }}>{formatCurrency(summary.usd, 'USD')}</td>
-                      <td className="text-right py-3 px-3 body-text" style={{ color: '#015965' }}>{formatCurrency(summary.pen, 'PEN')}</td>
-                      <td className="text-right py-3 pl-3 body-text" style={{ color: '#015965' }}>{formatCurrency(summary.local, 'PEN')}</td>
+                    <tr key={month}>
+                      <td className="p-4 font-semibold">{month}</td>
+                      <td className="p-4 text-right">{formatCurrency(summary.usd, 'USD')}</td>
+                      <td className="p-4 text-right">{formatCurrency(summary.pen, 'PEN')}</td>
+                      <td className="p-4 text-right">{formatCurrency(summary.local, 'PEN')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         )}
 
+        {/* Raw Data Table */}
         {data && data.rows.length > 0 ? (
-          <div className="rounded-xl shadow-lg overflow-hidden border-2" style={{ 
-            backgroundColor: 'var(--soma-blanco)', 
-            borderColor: 'var(--soma-petroleo)' 
-          }}>
-            <div className="overflow-x-auto p-6">
-              <table className="min-w-full">
-                <thead>
+          <section>
+            <h2 className="text-2xl font-bold mb-4 text-white">Raw Expenses Data</h2>
+            <div className="overflow-x-auto bg-gray-800 rounded-lg">
+              <table className="min-w-full text-left text-sm text-gray-300">
+                <thead className="bg-gray-700">
                   <tr>
                     {data.headers.map((header, index) => (
-                      <th 
-                        key={index}
-                        className="sticky top-0 px-4 py-4 text-left small-text font-bold uppercase tracking-wider whitespace-nowrap border-b-2"
-                        style={{ color: '#2FFFCC', borderColor: '#2FFFCC', backgroundColor: '#015965' }}
-                      >
+                      <th key={index} scope="col" className="p-4 whitespace-nowrap">
                         {header}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="divide-y divide-gray-700">
                   {data.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="hover:bg-opacity-50 transition-all border-b" style={{ 
-                      borderColor: 'var(--soma-aquamarina)'
-                    }}>
+                    <tr key={rowIndex}>
                       {data.headers.map((header, colIndex) => (
-                        <td 
-                          key={colIndex}
-                          className="px-4 py-4 body-text whitespace-nowrap"
-                          style={{ color: '#015965' }}
-                        >
-                          {formatValue(row[header] ?? row[Object.keys(row)[colIndex]], header)}
+                        <td key={colIndex} className="p-4 whitespace-nowrap">
+                          {formatValue(row[header], header)}
                         </td>
                       ))}
                     </tr>
@@ -425,21 +376,19 @@ export default function ExpensesPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         ) : (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Expenses Data</h3>
-            <p className="text-gray-600">No expense records were found in the Google Sheet.</p>
+          <div className="text-center py-12">
+            <p className="text-gray-400">No expenses data to display.</p>
           </div>
         )}
-      </div>
+      </main>
+
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 p-3 rounded-full shadow-lg transition-opacity hover:opacity-90 z-20"
-          style={{ backgroundColor: 'var(--soma-petroleo)', color: 'var(--soma-aquamarina)' }}
-          aria-label="Go to top"
+          className="fixed bottom-8 right-8 p-3 rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition-colors"
+          aria-label="Back to top"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />

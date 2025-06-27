@@ -80,23 +80,53 @@ export async function fetchSheetData(
     }
 
     const table = data.table;
-    const headers: string[] = table.cols.map((col: GSheetCol) => col.label || col.id || '');
-    const rows: SheetRow[] = [];
+    const cols: GSheetCol[] = table.cols;
+    const rawRows: GSheetRow[] = table.rows || [];
 
-    if (table.rows) {
-      table.rows.forEach((row: GSheetRow) => {
+    // Identify indices of non-empty columns
+    const nonEmptyColIndices: number[] = [];
+    cols.forEach((col: GSheetCol, index: number) => {
+      const header = (col.label || col.id || '').trim();
+      
+      // A column is considered empty if its header is a single letter (like Q, R, S)
+      // AND it has no data. This is to filter out default, empty columns from Google Sheets.
+      const isDefaultHeader = /^[A-Z]$/.test(header);
+
+      const hasData = rawRows.some(row => 
+        row.c && row.c[index] && row.c[index].v !== null && row.c[index].v !== ''
+      );
+      
+      // If the header is a default header and there is no data, skip it.
+      if (isDefaultHeader && !hasData) {
+        return;
+      }
+      
+      // Otherwise, keep the column.
+      nonEmptyColIndices.push(index);
+    });
+
+    // Filter headers and rows based on non-empty indices
+    const headers: string[] = nonEmptyColIndices.map(index => 
+      cols[index].label || cols[index].id || ''
+    );
+
+    const rows: SheetRow[] = rawRows
+      .map((row: GSheetRow) => {
         const rowData: SheetRow = {};
-        if (row.c) {
-          row.c.forEach((cell: GSheetCell | null, index: number) => {
-            const header = headers[index];
+        if (row && row.c) {
+          nonEmptyColIndices.forEach((colIndex, i) => {
+            const header = headers[i];
             if (header) {
-              rowData[header] = cell ? (cell.v !== null ? cell.v : null) : null;
+              const cell = row.c?.[colIndex];
+              rowData[header] = cell?.v ?? null;
             }
           });
         }
-        rows.push(rowData);
-      });
-    }
+        return rowData;
+      })
+      .filter(rowData =>
+        Object.values(rowData).some(val => val !== null && val !== '')
+      );
 
     return { headers, rows };
   } catch (error) {

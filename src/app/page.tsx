@@ -1,122 +1,135 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-import { fetchExchangeRate } from '../utils/fetchSheetsData';
+import { fetchSheetData, type SheetData, type SheetRow } from '../utils/fetchSheetsData';
 
-export default function Home() {
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+export default function HomePage() {
+  const [totalIncome, setTotalIncome] = useState<number>(0);
+  const [totalExpenses, setTotalExpenses] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchExchangeRate()
-      .then(setExchangeRate)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch sales and expenses data in parallel
+        const [salesData, expensesData] = await Promise.all([
+          fetchSheetData('Sales Data'),
+          fetchSheetData('Expenses Data')
+        ]);
+
+        // Calculate Total Income from sales
+        let income = 0;
+        const unitPriceCol = salesData.headers.find(h => h.toLowerCase().includes('unit') && h.toLowerCase().includes('price'));
+        const quantityCol = salesData.headers.find(h => h.toLowerCase().includes('order') && h.toLowerCase().includes('quantity'));
+        if (unitPriceCol && quantityCol) {
+          salesData.rows.forEach(row => {
+            const unitPrice = parseFloat(row[unitPriceCol]?.toString() || '0') || 0;
+            const quantity = parseFloat(row[quantityCol]?.toString() || '0') || 0;
+            income += unitPrice * quantity;
+          });
+        }
+        setTotalIncome(income);
+
+        // Calculate Total Expenses from expenses
+        let expenses = 0;
+        const totalPenHeader = expensesData.headers.find(h => h.trim().toUpperCase() === 'TOTAL PEN');
+        if (totalPenHeader) {
+          expensesData.rows.forEach(row => {
+            const expenseValue = row[totalPenHeader];
+            if (expenseValue !== null && expenseValue !== undefined) {
+              const cleaned = expenseValue.toString().replace(/[^\d.-]/g, '');
+              const num = parseFloat(cleaned);
+              if (!isNaN(num)) {
+                expenses += num;
+              }
+            }
+          });
+        }
+        setTotalExpenses(expenses);
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
   }, []);
 
+  const balance = totalIncome - totalExpenses;
+
+  const formatCurrency = (value: number) => {
+    return `S/${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Image src="/Assets/Soma_Logo.png" alt="Loading..." width={80} height={80} className="animate-spin-logo" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-4">
-              <Image 
-                src="/Assets/Soma_Written_Logo.png" 
-                alt="Soma Dashboard" 
-                width={128}
-                height={32}
-                className="h-8 w-auto"
-              />
-            </div>
-            
-            {!loading && exchangeRate && (
-              <div className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--soma-lavanda)', color: 'var(--soma-petroleo)' }}>
-                <span className="button-text">
-                  USD/PEN: {exchangeRate.toFixed(4)}
-                </span>
-              </div>
-            )}
+    <div className="min-h-screen bg-gray-900 text-white">
+      <header className="py-6 px-4 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={50} height={50} />
+            <h1 className="ml-4 text-3xl font-bold">Soma Dashboard</h1>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4" style={{ color: '#2FFFCC' }}>
-            Business Dashboard
-          </h1>
-          <p className="body-text max-w-2xl mx-auto" style={{ color: 'var(--soma-petroleo)' }}>
-            Monitor your company&apos;s financial data with real-time insights from Google Sheets
-          </p>
-        </div>
-
-        {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Expenses Card */}
-          <Link 
-            href="/expenses" 
-            className="group rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-opacity-30 hover:border-opacity-100"
-            style={{ 
-              backgroundColor: '#2FFFCC', 
-              borderColor: 'var(--soma-petroleo)'
-            }}
-          >
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all group-hover:scale-110" style={{ backgroundColor: 'var(--soma-petroleo)' }}>
-                  <svg className="w-6 h-6" fill="none" stroke="var(--soma-aquamarina)" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-3xl font-bold mb-3" style={{ color: '#015965' }}>Expenses</h3>
-              <p className="body-text mb-6" style={{ color: '#015965' }}>
-                View and analyze all company expenses with detailed breakdowns by date, category, and payment method.
-              </p>
-              <div className="flex items-center button-text group-hover:translate-x-1 transition-transform font-bold text-lg" style={{ color: '#015965' }}>
-                View Expenses
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 text-white">Financial Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-300">Total Income</h3>
+              <p className="text-3xl font-bold text-green-400 mt-2">{formatCurrency(totalIncome)}</p>
             </div>
-          </Link>
-
-          {/* Sales Data Card */}
-          <Link 
-            href="/sales" 
-            className="group rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-opacity-30 hover:border-opacity-100"
-            style={{ 
-              backgroundColor: '#2FFFCC', 
-              borderColor: 'var(--soma-petroleo)'
-            }}
-          >
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all group-hover:scale-110" style={{ backgroundColor: 'var(--soma-petroleo)' }}>
-                  <svg className="w-6 h-6" fill="none" stroke="var(--soma-aquamarina)" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h10l4 12H5.4L7 7z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-3xl font-bold mb-3" style={{ color: '#015965' }}>Sales Data</h3>
-              <p className="body-text mb-6" style={{ color: '#015965' }}>
-                Track sales performance, revenue trends, and customer insights with comprehensive data analysis.
-              </p>
-              <div className="flex items-center button-text group-hover:translate-x-1 transition-transform font-bold text-lg" style={{ color: '#015965' }}>
-                View Sales Data
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
+            <div className="bg-gray-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-300">Total Expenses</h3>
+              <p className="text-3xl font-bold text-red-400 mt-2">{formatCurrency(totalExpenses)}</p>
             </div>
-          </Link>
-        </div>
-      </div>
+            <div className="bg-gray-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-300">Balance</h3>
+              <p className={`text-3xl font-bold mt-2 ${balance >= 0 ? 'text-blue-400' : 'text-yellow-400'}`}>
+                {formatCurrency(balance)}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold mb-4 text-white">Navigate</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link href="/sales" className="block p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
+              <h3 className="text-xl font-bold">Sales Data</h3>
+              <p className="mt-2 text-gray-400">View detailed sales records and analytics.</p>
+            </Link>
+            <Link href="/expenses" className="block p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
+              <h3 className="text-xl font-bold">Expenses Data</h3>
+              <p className="mt-2 text-gray-400">View detailed expense records and summaries.</p>
+            </Link>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

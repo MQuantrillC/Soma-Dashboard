@@ -95,16 +95,16 @@ export default function SalesPage() {
           return dateValue.toString();
         }
 
-        // Format to 'DD Mon YYYY, HH:mm'
-        return date.toLocaleString('en-GB', {
-          day: '2-digit',
+        // Format to 'Mon DD, YYYY, hh:mm A'
+        return date.toLocaleString('en-US', {
           month: 'short',
+          day: '2-digit',
           year: 'numeric',
           hour: '2-digit',
           minute: '2-digit',
-          hour12: false,
+          hour12: true,
           timeZone: 'UTC'
-        }).replace(',', '');
+        });
       }
     }
 
@@ -131,6 +131,11 @@ export default function SalesPage() {
     const stringValue = value.toString();
     if (stringValue.toLowerCase().includes('data last updated')) {
       return '-';
+    }
+    
+    // Attempt to format as a date if it matches the specific Google Sheets format
+    if (typeof value === 'string' && value.startsWith('Date(')) {
+      return formatDate(value);
     }
     
     // Format currency columns
@@ -239,6 +244,60 @@ export default function SalesPage() {
   };
 
   const salesData = calculateSalesData();
+  const usdIncome = exchangeRate ? salesData.totalIncome / exchangeRate : 0;
+
+  // Calculate monthly sales summary
+  const calculateMonthlySummary = () => {
+    if (!data || !data.rows.length) {
+      return {};
+    }
+
+    const dateHeader = data.headers.find(h => h.trim().toLowerCase().includes('fecha') || h.trim().toLowerCase().includes('date'));
+    const unitPriceCol = data.headers.find(h => h.toLowerCase().includes('unit') && h.toLowerCase().includes('price'));
+    const quantityCol = data.headers.find(h => h.toLowerCase().includes('order') && h.toLowerCase().includes('quantity'));
+
+    if (!dateHeader || !unitPriceCol || !quantityCol) {
+      return {};
+    }
+
+    const monthlySummary: { [month: string]: { totalIncome: number } } = {};
+
+    data.rows.forEach(row => {
+      const dateValue = row[dateHeader];
+      if (!dateValue) return;
+
+      let date;
+      if (typeof dateValue === 'string' && dateValue.startsWith('Date(')) {
+        const parts = dateValue.substring(5, dateValue.length - 1).split(',');
+        if (parts.length >= 3) {
+          const year = parseInt(parts[0]);
+          const month = parseInt(parts[1]);
+          const day = parseInt(parts[2]);
+          date = new Date(Date.UTC(year, month, day));
+        } else {
+          return;
+        }
+      } else {
+        date = new Date(dateValue);
+      }
+
+      if (isNaN(date.getTime())) return;
+
+      const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+      if (!monthlySummary[monthYear]) {
+        monthlySummary[monthYear] = { totalIncome: 0 };
+      }
+
+      const unitPrice = parseFloat(row[unitPriceCol]?.toString() || '0') || 0;
+      const quantity = parseFloat(row[quantityCol]?.toString() || '0') || 0;
+      monthlySummary[monthYear].totalIncome += unitPrice * quantity;
+    });
+
+    return monthlySummary;
+  };
+
+  const monthlySummary = calculateMonthlySummary();
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -249,282 +308,205 @@ export default function SalesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--soma-aquamarina)' }}></div>
-            <span className="ml-4 body-text" style={{ color: 'var(--soma-petroleo)' }}>Loading sales data...</span>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Image src="/Assets/Soma_Logo.png" alt="Loading..." width={80} height={80} className="animate-spin-logo" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="border rounded-xl p-6" style={{ backgroundColor: 'var(--soma-lavanda)', borderColor: 'var(--soma-petroleo)', opacity: 0.9 }}>
-            <h2 className="heading-h2 mb-2" style={{ color: 'var(--soma-negro)' }}>Error Loading Data</h2>
-            <p className="body-text mb-4" style={{ color: 'var(--soma-petroleo)' }}>{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="button-text px-6 py-3 rounded-lg hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: 'var(--soma-pino)', color: 'white' }}
-            >
-              Retry
-            </button>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="max-w-7xl mx-auto p-8 text-center">
+          <p className="text-red-500 text-lg">Error: {error}</p>
+          <p className="text-gray-400 mt-2">Could not fetch sales data. Please try again later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--soma-blanco)' }}>
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="button-text hover:opacity-80 transition-opacity px-4 py-2 rounded-lg border-2" style={{ 
-                color: '#015965', 
-                borderColor: '#015965',
-                backgroundColor: 'transparent'
-              }}>
-                ← Back to Dashboard
+    <>
+      <main className="min-h-screen">
+        
+        {/* Header and navigation */}
+        <header className="py-6 px-4 sm:px-6 lg:px-8 bg-gray-900">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <div className="flex items-center">
+              <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={50} height={50} />
+              <h1 className="ml-4 text-3xl font-bold text-white">Sales Data</h1>
+            </div>
+            <nav className="flex items-center space-x-4">
+              <Link href="/" className="px-4 py-2 rounded-lg border border-gray-600 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-colors">
+                Home
               </Link>
-              <div className="h-6 w-px" style={{ backgroundColor: 'var(--soma-lavanda)' }}></div>
-              <Image src="/Assets/Soma_Logo_Black.png" alt="Soma Logo" width={32} height={32} />
-              <h1 className="heading-h1 font-bold" style={{ color: '#015965' }}>Sales Data</h1>
-            </div>
-            {exchangeRate && (
-              <div className="px-4 py-2 border-2 rounded" style={{ 
-                borderColor: '#015965', 
-                color: '#015965',
-                backgroundColor: 'transparent'
-              }}>
-                <span className="button-text">
-                  USD/PEN: {exchangeRate.toFixed(4)}
-                </span>
-              </div>
-            )}
+              <Link href="/expenses" className="px-4 py-2 rounded-lg border border-gray-600 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-colors">
+                Expenses
+              </Link>
+            </nav>
           </div>
-        </div>
-      </div>
+        </header>
+        
+        {/* Content */}
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto p-8">
-        {/* Totals and Analytics Section */}
-        {data && data.rows.length > 0 && (
-          <div className="mb-8 space-y-6">
-            {/* Total Income - Both PEN and USD */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Total Income in PEN */}
-              <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
+          {/* Sales Analytics */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4 text-white">Sales Analytics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              
+              {/* Total Income */}
+              <div className="bg-gray-800 p-6 rounded-lg">
                 <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#015965' }}>
-                      <span className="button-text font-bold" style={{ color: '#2FFFCC' }}>S/</span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="small-text" style={{ color: '#015965' }}>Total Income (PEN)</p>
-                    <p className="text-3xl font-bold" style={{ color: '#015965' }}>
-                      S/{salesData.totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-300">Total Income</h3>
                 </div>
-              </div>
-
-              {/* Total Income in USD */}
-              <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#015965' }}>
-                      <span className="button-text font-bold" style={{ color: '#2FFFCC' }}>$</span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="small-text" style={{ color: '#015965' }}>Total Income (USD)</p>
-                    <p className="text-3xl font-bold" style={{ color: '#015965' }}>
-                      ${(salesData.totalIncome / (exchangeRate || 3.5)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <p className="text-3xl font-bold text-white mt-2">
+                  {formatCurrency(salesData.totalIncome, 'PEN')}
+                </p>
+                {exchangeRate && (
+                  <div className="flex items-center mt-1">
+                    <p className="text-sm text-gray-400">
+                      (Approx. {formatCurrency(usdIncome, 'USD')})
                     </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Ring Analytics */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-              {/* Ring Colors Sold */}
-              <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-                <h3 className="text-2xl font-bold mb-4" style={{ color: '#015965' }}>Ring Colors Sold</h3>
-                <div className="space-y-3">
-                  {Object.entries(salesData.ringAnalytics.colors).map(([color, count]) => {
-                    const totalColors = salesData.ringAnalytics.totalColors || 0;
-                    const percentage = totalColors > 0 
-                      ? ((count / totalColors) * 100).toFixed(1)
-                      : '0.0';
-                    return (
-                      <div key={color} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className={`w-4 h-4 rounded-full mr-3`} style={{
-                            border: `2px solid ${
-                              color === 'Black' ? '#051F22' :
-                              color === 'Silver' ? '#C0C0C0' :
-                              color === 'Rose Gold' ? '#E0BFB8' :
-                              '#015965'
-                            }`
-                          }}></div>
-                          <span className="body-text" style={{ color: '#015965' }}>Soma Ring - {color}</span>
-                        </div>
-                        <span className="body-medium" style={{ color: '#015965' }}>
-                          {count}
-                          <span className="text-sm opacity-70 ml-2">({percentage}%)</span>
-                        </span>
+                    <div className="relative group ml-2">
+                      <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
+                      <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        Converted to USD using an exchange rate of {exchangeRate.toFixed(4)}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Ring Sizes Sold */}
-              <div className="rounded-xl shadow-lg p-6 border-2" style={{ backgroundColor: '#2FFFCC', borderColor: '#015965' }}>
-                <h3 className="text-2xl font-bold mb-4" style={{ color: '#015965' }}>Ring Sizes Sold</h3>
-                <div className="space-y-3">
-                  {Object.entries(salesData.ringAnalytics.sizes)
-                    .sort(([a], [b]) => {
-                      const numA = parseInt(a.replace('Size ', ''));
-                      const numB = parseInt(b.replace('Size ', ''));
-                      return numA - numB;
-                    })
-                    .map(([size, count]) => {
-                      const totalSizes = salesData.ringAnalytics.totalSizes || 0;
-                      const percentage = totalSizes > 0
-                        ? ((count / totalSizes) * 100).toFixed(1)
-                        : '0.0';
-                      return (
-                        <div key={size} className="flex items-center justify-between">
-                          <span className="body-text" style={{ color: '#015965' }}>{size}</span>
-                          <span className="body-medium" style={{ color: '#015965' }}>
-                            {count}
-                            <span className="text-sm opacity-70 ml-2">({percentage}%)</span>
-                          </span>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-
-            {/* Ring Color-Size Correlation */}
-            <div className="mt-8 text-center">
-              <h3 className="text-3xl font-bold text-center mb-6" style={{ color: '#2FFFCC' }}>
-                Ring Sales Correlation (Color & Size)
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                {Object.entries(salesData.ringAnalytics.colorSizeCorrelation).map(([color, sizes]) => (
-                  <div key={color} className="rounded-xl shadow-lg p-6 border-2" style={{
-                    backgroundColor: '#2FFFCC',
-                    borderColor: '#015965'
-                  }}>
-                    <div className="flex items-center mb-4">
-                       <div className={`w-6 h-6 rounded-full mr-3`} style={{
-                         border: `3px solid ${
-                           color === 'Black' ? '#051F22' :
-                           color === 'Silver' ? '#C0C0C0' :
-                           color === 'Rose Gold' ? '#E0BFB8' :
-                           '#015965'
-                         }`
-                       }}></div>
-                      <h4 className="text-2xl font-bold" style={{ color: '#015965' }}>
-                        {color} Rings
-                      </h4>
-                    </div>
-                    <div className="space-y-2">
-                      {Object.entries(sizes)
-                        .sort(([sizeA], [sizeB]) => {
-                           const numA = parseInt(sizeA.replace('Size ', ''));
-                           const numB = parseInt(sizeB.replace('Size ', ''));
-                           return numA - numB;
-                        })
-                        .map(([size, count]) => (
-                        <div key={size} className="flex justify-between items-center">
-                          <span className="body-text" style={{ color: '#015965' }}>{size}</span>
-                          <span className="body-medium font-bold" style={{ color: '#015965' }}>{count} sold</span>
-                        </div>
-                      ))}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
 
-          </div>
-        )}
-
-        {data && data.rows.length > 0 ? (
-                      <div className="rounded-xl shadow-lg overflow-hidden border-2" style={{ 
-              backgroundColor: 'var(--soma-blanco)', 
-              borderColor: 'var(--soma-petroleo)' 
-            }}>
-            
-            {/* Horizontal scroll indicator at top */}
-            <div className="relative mb-4 px-6 pt-4">
-              <div className="h-3 rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--soma-petroleo)', opacity: 0.3 }}>
-                <div 
-                  id="scroll-indicator"
-                  className="h-full rounded-lg transition-all duration-150 ease-out"
-                  style={{width: '20%', position: 'relative', left: '0%', backgroundColor: 'var(--soma-aquamarina)'}}
-                ></div>
-              </div>
-              <p className="small-text mt-1" style={{ color: 'var(--soma-petroleo)' }}>← Scroll horizontally to view all columns →</p>
-            </div>
-            
-            <div className="overflow-x-auto px-6 pb-6" id="sales-table-container">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    {data.headers.map((header, index) => (
-                      <th 
-                        key={index}
-                        className="sticky top-0 px-4 py-4 text-left small-text font-bold uppercase tracking-wider whitespace-nowrap border-b-2"
-                        style={{ color: '#2FFFCC', borderColor: '#2FFFCC', backgroundColor: '#015965' }}
-                      >
-                        {header}
-                      </th>
+              {/* Ring Colors Breakdown */}
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-300">Ring Sales by Color</h3>
+                {salesData.ringAnalytics.totalColors && salesData.ringAnalytics.totalColors > 0 ? (
+                  <ul className="mt-2 space-y-1 text-gray-200">
+                    {Object.entries(salesData.ringAnalytics.colors).map(([color, count]) => (
+                      <li key={color} className="flex justify-between">
+                        <span>{color}</span>
+                        <span>{count} units ({((count / (salesData.ringAnalytics.totalColors || 1)) * 100).toFixed(1)}%)</span>
+                      </li>
                     ))}
-                  </tr>
-                </thead>
-                <tbody className="bg-white">
-                  {data.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="hover:bg-opacity-50 transition-all border-b" style={{ 
-                      borderColor: 'var(--soma-aquamarina)'
-                    }}>
-                      {data.headers.map((header, colIndex) => (
-                        <td 
-                          key={colIndex}
-                          className="px-4 py-4 body-text whitespace-nowrap"
-                          style={{ color: '#015965' }}
-                        >
-                          {formatValue(row[header], header)}
-                        </td>
+                  </ul>
+                ) : <p className="text-gray-400 mt-2">No ring color data available.</p>}
+              </div>
+
+              {/* Ring Sizes Breakdown */}
+              <div className="bg-gray-800 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-300">Ring Sales by Size</h3>
+                {salesData.ringAnalytics.totalSizes && salesData.ringAnalytics.totalSizes > 0 ? (
+                  <ul className="mt-2 space-y-1 text-gray-200">
+                    {Object.entries(salesData.ringAnalytics.sizes)
+                      .sort(([a], [b]) => parseInt(a.replace('Size ', '')) - parseInt(b.replace('Size ', '')))
+                      .map(([size, count]) => (
+                      <li key={size} className="flex justify-between">
+                        <span>{size}</span>
+                        <span>{count} units ({((count / (salesData.ringAnalytics.totalSizes || 1)) * 100).toFixed(1)}%)</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-gray-400 mt-2">No ring size data available.</p>}
+              </div>
+            </div>
+          </section>
+
+          {/* Ring Sales Correlation */}
+          {Object.keys(salesData.ringAnalytics.colorSizeCorrelation).length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-2xl font-bold mb-4 text-white">Ring Sales Correlation (Color & Size)</h2>
+              <div className="overflow-x-auto bg-gray-800 rounded-lg">
+                <table className="min-w-full text-left text-sm text-gray-300">
+                  <thead className="bg-gray-700">
+                    <tr>
+                      <th scope="col" className="p-4">Color</th>
+                      {Object.keys(Object.values(salesData.ringAnalytics.colorSizeCorrelation)[0] || {}).map(size => (
+                        <th scope="col" key={size} className="p-4 text-center">{size}</th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {Object.entries(salesData.ringAnalytics.colorSizeCorrelation).map(([color, sizes]) => (
+                      <tr key={color} className="border-b border-gray-700">
+                        <td className="p-4 font-semibold">{color}</td>
+                        {Object.entries(sizes)
+                          .sort(([a], [b]) => parseInt(a.replace('Size ', '')) - parseInt(b.replace('Size ', '')))
+                          .map(([size, count]) => (
+                          <td key={size} className="p-4 text-center">{count}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Monthly Summary Table */}
+          {Object.keys(monthlySummary).length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-2xl font-bold mb-4 text-white">Monthly Summary</h2>
+              <div className="overflow-x-auto bg-gray-800 rounded-lg">
+                <table className="min-w-full text-left text-sm text-gray-300">
+                  <thead className="bg-gray-700">
+                    <tr>
+                      <th scope="col" className="p-4">Month</th>
+                      <th scope="col" className="p-4">Total Income</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(monthlySummary).map(([month, summary]) => (
+                      <tr key={month} className="border-b border-gray-700">
+                        <td className="p-4 font-semibold">{month}</td>
+                        <td className="p-4">{formatCurrency(summary.totalIncome, 'PEN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Raw Data Table */}
+          {data && data.rows.length > 0 ? (
+            <section>
+              <h2 className="text-2xl font-bold mb-4 text-white">Raw Sales Data</h2>
+              <div id="sales-table-container" className="overflow-x-auto bg-gray-800 rounded-lg">
+                <div id="scroll-indicator-container" className="sticky top-0 h-1 bg-gray-700 rounded-lg overflow-hidden">
+                  <div id="scroll-indicator" className="h-1 bg-cyan-400" style={{ position: 'relative', width: '10%' }}></div>
+                </div>
+                <table className="min-w-full text-left text-sm text-gray-300">
+                  <thead className="bg-gray-700">
+                    <tr>
+                      {data.headers.map((header, index) => (
+                        <th key={index} scope="col" className="p-4 whitespace-nowrap">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {data.rows.map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {data.headers.map((header, colIndex) => (
+                          <td key={colIndex} className="p-4 whitespace-nowrap">
+                            {formatValue(row[header], header)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-400">No sales data available.</p>
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">💰</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Sales Data</h3>
-            <p className="text-gray-600">No sales records were found in the Google Sheet.</p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </main>
       {showBackToTop && (
         <button
           onClick={scrollToTop}
@@ -537,6 +519,6 @@ export default function SalesPage() {
           </svg>
         </button>
       )}
-    </div>
+    </>
   );
 } 
