@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { fetchSheetData, fetchExchangeRate, type SheetData, type SheetRow } from '../../utils/fetchSheetsData';
+import { fetchSheetData, type SheetData, type SheetRow } from '../../utils/fetchSheetsData';
 
 export default function ExpensesPage() {
   const [data, setData] = useState<SheetData | null>(null);
