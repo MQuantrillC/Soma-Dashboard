@@ -55,14 +55,17 @@ export async function fetchSheetData(
 
     const text = await response.text();
     
-    // Check if the response is the expected JSONP format
-    if (!text.startsWith('google.visualization.Query.setResponse(')) {
+    // The response is wrapped in a function call, so we need to extract the JSON.
+    // The response may start with "/*O_o*/"
+    const jsonStartIndex = text.indexOf('{');
+    const jsonEndIndex = text.lastIndexOf('}') + 1;
+
+    if (jsonStartIndex === -1 || jsonEndIndex === 0) {
       console.error('Unexpected response from Google Sheets API:', text);
       throw new Error('Received an unexpected response from Google Sheets API. The sheet might not be public or the API may have changed.');
     }
-    
-    // The response is wrapped in a function call, so we need to extract the JSON
-    const jsonText = text.substring(47, text.length - 2); // More robust slicing
+
+    const jsonText = text.substring(jsonStartIndex, jsonEndIndex);
     
     let data;
     try {
