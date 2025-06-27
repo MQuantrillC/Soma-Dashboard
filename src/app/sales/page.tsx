@@ -11,6 +11,7 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -260,7 +261,7 @@ export default function SalesPage() {
       return {};
     }
 
-    const monthlySummary: { [month: string]: { totalIncome: number } } = {};
+    const monthlySummary: { [month: string]: { totalIncome: number, unitsSold: number } } = {};
 
     data.rows.forEach(row => {
       const dateValue = row[dateHeader];
@@ -286,12 +287,13 @@ export default function SalesPage() {
       const monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
       if (!monthlySummary[monthYear]) {
-        monthlySummary[monthYear] = { totalIncome: 0 };
+        monthlySummary[monthYear] = { totalIncome: 0, unitsSold: 0 };
       }
 
       const unitPrice = parseFloat(row[unitPriceCol]?.toString() || '0') || 0;
       const quantity = parseFloat(row[quantityCol]?.toString() || '0') || 0;
       monthlySummary[monthYear].totalIncome += unitPrice * quantity;
+      monthlySummary[monthYear].unitsSold += quantity;
     });
 
     return monthlySummary;
@@ -330,13 +332,14 @@ export default function SalesPage() {
       <main className="min-h-screen">
         
         {/* Header and navigation */}
-        <header className="py-6 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        <header className="py-5 px-5 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center">
-              <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={50} height={50} />
-              <h1 className="ml-4 text-3xl font-bold text-white">Sales Data</h1>
+              <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={40} height={40} className="sm:w-[50px] sm:h-[50px]" />
+              <h1 className="ml-3 text-2xl sm:text-3xl font-bold text-white">Sales Data</h1>
             </div>
-            <nav className="flex items-center space-x-4">
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-4">
               <Link href="/" className="px-4 py-2 rounded-lg border border-gray-600 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-colors">
                 Home
               </Link>
@@ -344,28 +347,43 @@ export default function SalesPage() {
                 Expenses
               </Link>
             </nav>
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-300 hover:text-white focus:outline-none">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"} />
+                </svg>
+              </button>
+            </div>
           </div>
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <nav className="md:hidden mt-4 space-y-2">
+              <Link href="/" className="block px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 rounded-lg">Home</Link>
+              <Link href="/expenses" className="block px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 rounded-lg">Expenses</Link>
+            </nav>
+          )}
         </header>
         
         {/* Content */}
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto p-5 sm:p-6 lg:p-8">
 
           {/* Sales Analytics */}
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-white">Sales Analytics</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Sales Analytics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               
               {/* Total Income */}
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
                 <div className="flex items-center">
-                  <h3 className="text-lg font-semibold text-gray-300">Total Income</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-300">Total Income</h3>
                 </div>
-                <p className="text-3xl font-bold text-white mt-2">
+                <p className="text-2xl sm:text-3xl font-bold text-white mt-2">
                   {formatCurrency(salesData.totalIncome, 'PEN')}
                 </p>
                 {exchangeRate && (
                   <div className="flex items-center mt-1">
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm sm:text-base text-gray-400">
                       (Approx. {formatCurrency(usdIncome, 'USD')})
                     </p>
                     <div className="relative group ml-2">
@@ -379,10 +397,10 @@ export default function SalesPage() {
               </div>
 
               {/* Ring Colors Breakdown */}
-              <div className="bg-gray-800 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-300">Ring Sales by Color</h3>
+              <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-300">Ring Sales by Color</h3>
                 {salesData.ringAnalytics.totalColors && salesData.ringAnalytics.totalColors > 0 ? (
-                  <ul className="mt-2 space-y-1 text-gray-200">
+                  <ul className="mt-2 space-y-1 text-gray-200 text-sm sm:text-base">
                     {Object.entries(salesData.ringAnalytics.colors).map(([color, count]) => (
                       <li key={color} className="flex justify-between">
                         <span>{color}</span>
@@ -394,10 +412,10 @@ export default function SalesPage() {
               </div>
 
               {/* Ring Sizes Breakdown */}
-              <div className="bg-gray-800 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-300">Ring Sales by Size</h3>
+              <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-300">Ring Sales by Size</h3>
                 {salesData.ringAnalytics.totalSizes && salesData.ringAnalytics.totalSizes > 0 ? (
-                  <ul className="mt-2 space-y-1 text-gray-200">
+                  <ul className="mt-2 space-y-1 text-gray-200 text-sm sm:text-base">
                     {Object.entries(salesData.ringAnalytics.sizes)
                       .sort(([a], [b]) => parseInt(a.replace('Size ', '')) - parseInt(b.replace('Size ', '')))
                       .map(([size, count]) => (
@@ -415,25 +433,25 @@ export default function SalesPage() {
           {/* Ring Sales Correlation */}
           {Object.keys(salesData.ringAnalytics.colorSizeCorrelation).length > 0 && (
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-white">Ring Sales Correlation (Color & Size)</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Ring Sales Correlation (Color & Size)</h2>
               <div className="overflow-x-auto bg-gray-800 rounded-lg">
                 <table className="min-w-full text-left text-sm text-gray-300">
                   <thead className="bg-gray-700">
                     <tr>
-                      <th scope="col" className="p-4">Color</th>
+                      <th scope="col" className="p-3 sm:p-4">Color</th>
                       {Object.keys(Object.values(salesData.ringAnalytics.colorSizeCorrelation)[0] || {}).map(size => (
-                        <th scope="col" key={size} className="p-4 text-center">{size}</th>
+                        <th scope="col" key={size} className="p-3 sm:p-4 text-center">{size}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(salesData.ringAnalytics.colorSizeCorrelation).map(([color, sizes]) => (
                       <tr key={color} className="border-b border-gray-700">
-                        <td className="p-4 font-semibold">{color}</td>
+                        <td className="p-3 sm:p-4 font-semibold">{color}</td>
                         {Object.entries(sizes)
                           .sort(([a], [b]) => parseInt(a.replace('Size ', '')) - parseInt(b.replace('Size ', '')))
                           .map(([size, count]) => (
-                          <td key={size} className="p-4 text-center">{count}</td>
+                          <td key={size} className="p-3 sm:p-4 text-center">{count}</td>
                         ))}
                       </tr>
                     ))}
@@ -446,20 +464,22 @@ export default function SalesPage() {
           {/* Monthly Summary Table */}
           {Object.keys(monthlySummary).length > 0 && (
             <section className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-white">Monthly Summary</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Monthly Summary</h2>
               <div className="overflow-x-auto bg-gray-800 rounded-lg">
                 <table className="min-w-full text-left text-sm text-gray-300">
                   <thead className="bg-gray-700">
                     <tr>
-                      <th scope="col" className="p-4">Month</th>
-                      <th scope="col" className="p-4">Total Income</th>
+                      <th scope="col" className="p-3 sm:p-4">Month</th>
+                      <th scope="col" className="p-3 sm:p-4">Total Income</th>
+                      <th scope="col" className="p-3 sm:p-4">Units Sold</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(monthlySummary).map(([month, summary]) => (
                       <tr key={month} className="border-b border-gray-700">
-                        <td className="p-4 font-semibold">{month}</td>
-                        <td className="p-4">{formatCurrency(summary.totalIncome, 'PEN')}</td>
+                        <td className="p-3 sm:p-4 font-semibold">{month}</td>
+                        <td className="p-3 sm:p-4">{formatCurrency(summary.totalIncome, 'PEN')}</td>
+                        <td className="p-3 sm:p-4">{summary.unitsSold}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -471,7 +491,7 @@ export default function SalesPage() {
           {/* Raw Data Table */}
           {data && data.rows.length > 0 ? (
             <section>
-              <h2 className="text-2xl font-bold mb-4 text-white">Raw Sales Data</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Raw Sales Data</h2>
               <div id="sales-table-container" className="overflow-x-auto bg-gray-800 rounded-lg">
                 <div id="scroll-indicator-container" className="sticky top-0 h-1 bg-gray-700 rounded-lg overflow-hidden">
                   <div id="scroll-indicator" className="h-1 bg-cyan-400" style={{ position: 'relative', width: '10%' }}></div>
@@ -480,7 +500,7 @@ export default function SalesPage() {
                   <thead className="bg-gray-700">
                     <tr>
                       {data.headers.map((header, index) => (
-                        <th key={index} scope="col" className="p-4 whitespace-nowrap">
+                        <th key={index} scope="col" className="p-3 sm:p-4 whitespace-nowrap">
                           {header}
                         </th>
                       ))}
@@ -490,7 +510,7 @@ export default function SalesPage() {
                     {data.rows.map((row, rowIndex) => (
                       <tr key={rowIndex}>
                         {data.headers.map((header, colIndex) => (
-                          <td key={colIndex} className="p-4 whitespace-nowrap">
+                          <td key={colIndex} className="p-3 sm:p-4 whitespace-nowrap">
                             {formatValue(row[header], header)}
                           </td>
                         ))}
@@ -510,9 +530,8 @@ export default function SalesPage() {
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 p-3 rounded-full shadow-lg transition-opacity hover:opacity-90 z-20"
-          style={{ backgroundColor: 'var(--soma-petroleo)', color: 'var(--soma-aquamarina)' }}
-          aria-label="Go to top"
+          className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 p-3 rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition-colors z-20"
+          aria-label="Back to top"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />

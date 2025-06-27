@@ -10,6 +10,7 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -252,13 +253,14 @@ export default function ExpensesPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <header className="py-6 px-4 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
+      <header className="py-5 px-5 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={50} height={50} />
-            <h1 className="ml-4 text-3xl font-bold">Expenses Data</h1>
+            <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={40} height={40} className="sm:w-[50px] sm:h-[50px]" />
+            <h1 className="ml-3 text-2xl sm:text-3xl font-bold">Expenses Data</h1>
           </div>
-          <nav className="flex items-center space-x-4">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-4">
             <Link href="/" className="px-4 py-2 rounded-lg border border-gray-600 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-colors">
               Home
             </Link>
@@ -266,19 +268,34 @@ export default function ExpensesPage() {
               Sales
             </Link>
           </nav>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-300 hover:text-white focus:outline-none">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"} />
+              </svg>
+            </button>
+          </div>
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <nav className="md:hidden mt-4 space-y-2">
+              <Link href="/" className="block px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 rounded-lg">Home</Link>
+              <Link href="/sales" className="block px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 rounded-lg">Sales</Link>
+            </nav>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="max-w-7xl mx-auto p-5 sm:p-6 lg:p-8">
         {/* Totals Section */}
         {data && data.rows.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-white">Total Expenses</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gray-800 p-6 rounded-lg">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Total Expenses</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
                 <div className="flex items-center">
-                  <h3 className="text-lg font-semibold text-gray-300">Total (USD)</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-300">Total (USD)</h3>
                   <div className="relative group ml-2">
                     <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
                     <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -286,11 +303,11 @@ export default function ExpensesPage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white mt-2">${totals.totalUSD.toLocaleString()}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white mt-2">${totals.totalUSD.toLocaleString()}</p>
               </div>
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
                 <div className="flex items-center">
-                  <h3 className="text-lg font-semibold text-gray-300">Total (PEN)</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-300">Total (PEN)</h3>
                   <div className="relative group ml-2">
                     <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
                     <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -298,11 +315,11 @@ export default function ExpensesPage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white mt-2">S/{totals.totalPEN.toLocaleString()}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white mt-2">S/{totals.totalPEN.toLocaleString()}</p>
               </div>
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
                 <div className="flex items-center">
-                  <h3 className="text-lg font-semibold text-gray-300">Total (Local PEN)</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-300">Total (Local PEN)</h3>
                    <div className="relative group ml-2">
                     <span className="text-xs text-gray-500 border border-gray-500 rounded-full w-4 h-4 flex items-center justify-center cursor-pointer">?</span>
                     <div className="absolute bottom-full mb-2 w-max max-w-xs px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -310,7 +327,7 @@ export default function ExpensesPage() {
                     </div>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white mt-2">S/{totals.totalLocal.toLocaleString()}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white mt-2">S/{totals.totalLocal.toLocaleString()}</p>
               </div>
             </div>
           </section>
@@ -319,24 +336,24 @@ export default function ExpensesPage() {
         {/* Monthly Summary */}
         {Object.keys(monthlySummary).length > 0 && (
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-white">Monthly Summary</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Monthly Summary</h2>
             <div className="overflow-x-auto bg-gray-800 rounded-lg">
               <table className="min-w-full text-left text-sm text-gray-300">
                 <thead className="bg-gray-700">
                   <tr>
-                    <th scope="col" className="p-4">Month</th>
-                    <th scope="col" className="p-4 text-right">USD Paid</th>
-                    <th scope="col" className="p-4 text-right">PEN Paid</th>
-                    <th scope="col" className="p-4 text-right">Total Local Currency</th>
+                    <th scope="col" className="p-3 sm:p-4">Month</th>
+                    <th scope="col" className="p-3 sm:p-4 text-right">USD Paid</th>
+                    <th scope="col" className="p-3 sm:p-4 text-right">PEN Paid</th>
+                    <th scope="col" className="p-3 sm:p-4 text-right">Total Local Currency</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {Object.entries(monthlySummary).map(([month, summary]) => (
                     <tr key={month}>
-                      <td className="p-4 font-semibold">{month}</td>
-                      <td className="p-4 text-right">{formatCurrency(summary.usd, 'USD')}</td>
-                      <td className="p-4 text-right">{formatCurrency(summary.pen, 'PEN')}</td>
-                      <td className="p-4 text-right">{formatCurrency(summary.local, 'PEN')}</td>
+                      <td className="p-3 sm:p-4 font-semibold">{month}</td>
+                      <td className="p-3 sm:p-4 text-right">{formatCurrency(summary.usd, 'USD')}</td>
+                      <td className="p-3 sm:p-4 text-right">{formatCurrency(summary.pen, 'PEN')}</td>
+                      <td className="p-3 sm:p-4 text-right">{formatCurrency(summary.local, 'PEN')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -348,13 +365,13 @@ export default function ExpensesPage() {
         {/* Raw Data Table */}
         {data && data.rows.length > 0 ? (
           <section>
-            <h2 className="text-2xl font-bold mb-4 text-white">Raw Expenses Data</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Raw Expenses Data</h2>
             <div className="overflow-x-auto bg-gray-800 rounded-lg">
               <table className="min-w-full text-left text-sm text-gray-300">
                 <thead className="bg-gray-700">
                   <tr>
                     {data.headers.map((header, index) => (
-                      <th key={index} scope="col" className="p-4 whitespace-nowrap">
+                      <th key={index} scope="col" className="p-3 sm:p-4 whitespace-nowrap">
                         {header}
                       </th>
                     ))}
@@ -364,7 +381,7 @@ export default function ExpensesPage() {
                   {data.rows.map((row, rowIndex) => (
                     <tr key={rowIndex}>
                       {data.headers.map((header, colIndex) => (
-                        <td key={colIndex} className="p-4 whitespace-nowrap">
+                        <td key={colIndex} className="p-3 sm:p-4 whitespace-nowrap">
                           {formatValue(row[header], header)}
                         </td>
                       ))}
@@ -384,7 +401,7 @@ export default function ExpensesPage() {
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 p-3 rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition-colors"
+          className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 p-3 rounded-full bg-cyan-500 text-white shadow-lg hover:bg-cyan-600 transition-colors"
           aria-label="Back to top"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -86,30 +86,30 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      <header className="py-6 px-4 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
+      <header className="py-5 px-5 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={50} height={50} />
-            <h1 className="ml-4 text-3xl font-bold">Soma Dashboard</h1>
+            <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={40} height={40} className="sm:w-[50px] sm:h-[50px]" />
+            <h1 className="ml-3 text-2xl sm:text-3xl font-bold">Soma Dashboard</h1>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="max-w-7xl mx-auto p-5 sm:p-6 lg:p-8">
         <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-white">Financial Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-300">Total Income</h3>
-              <p className="text-3xl font-bold text-green-400 mt-2">{formatCurrency(totalIncome)}</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Financial Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-300">Total Income</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-green-400 mt-2">{formatCurrency(totalIncome)}</p>
             </div>
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-300">Total Expenses</h3>
-              <p className="text-3xl font-bold text-red-400 mt-2">{formatCurrency(totalExpenses)}</p>
+            <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-300">Total Expenses</h3>
+              <p className="text-2xl sm:text-3xl font-bold text-red-400 mt-2">{formatCurrency(totalExpenses)}</p>
             </div>
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-300">Balance</h3>
-              <p className={`text-3xl font-bold mt-2 ${balance >= 0 ? 'text-blue-400' : 'text-yellow-400'}`}>
+            <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-300">Balance</h3>
+              <p className={`text-2xl sm:text-3xl font-bold mt-2 ${balance >= 0 ? 'text-blue-400' : 'text-yellow-400'}`}>
                 {formatCurrency(balance)}
               </p>
             </div>
@@ -117,15 +117,15 @@ export default function HomePage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold mb-4 text-white">Navigate</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Link href="/sales" className="block p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
-              <h3 className="text-xl font-bold">Sales Data</h3>
-              <p className="mt-2 text-gray-400">View detailed sales records and analytics.</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Navigate</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <Link href="/sales" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
+              <h3 className="text-lg sm:text-xl font-bold">Sales Data</h3>
+              <p className="mt-2 text-gray-400 text-sm sm:text-base">View detailed sales records and analytics.</p>
             </Link>
-            <Link href="/expenses" className="block p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
-              <h3 className="text-xl font-bold">Expenses Data</h3>
-              <p className="mt-2 text-gray-400">View detailed expense records and summaries.</p>
+            <Link href="/expenses" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
+              <h3 className="text-lg sm:text-xl font-bold">Expenses Data</h3>
+              <p className="mt-2 text-gray-400 text-sm sm:text-base">View detailed expense records and summaries.</p>
             </Link>
           </div>
         </section>
