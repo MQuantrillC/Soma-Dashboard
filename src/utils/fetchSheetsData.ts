@@ -36,14 +36,27 @@ export async function fetchSheetData(
     const response = await fetch(url.toString(), { cache: 'no-store' });
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch sheet data: ${response.statusText}`);
+      throw new Error(`Failed to fetch sheet data: ${response.statusText} (${response.status})`);
     }
 
     const text = await response.text();
     
+    // Check if the response is the expected JSONP format
+    if (!text.startsWith('google.visualization.Query.setResponse(')) {
+      console.error('Unexpected response from Google Sheets API:', text);
+      throw new Error('Received an unexpected response from Google Sheets API. The sheet might not be public or the API may have changed.');
+    }
+    
     // The response is wrapped in a function call, so we need to extract the JSON
-    const jsonText = text.substring(47).slice(0, -2); // Remove google.visualization.Query.setResponse( and );
-    const data = JSON.parse(jsonText);
+    const jsonText = text.substring(47, text.length - 2); // More robust slicing
+    
+    let data;
+    try {
+      data = JSON.parse(jsonText);
+    } catch (e) {
+      console.error('Failed to parse JSON from Google Sheets response:', jsonText);
+      throw new Error('Failed to parse JSON response from Google Sheets.');
+    }
 
     if (data.status === 'error') {
       throw new Error(`Google Sheets API error: ${data.errors[0].detailed_message}`);
