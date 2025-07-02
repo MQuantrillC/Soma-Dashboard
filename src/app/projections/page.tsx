@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
+import { ChevronUp } from 'lucide-react';
 import InputPanel from '@/components/projections/InputPanel';
 import StatCards from '@/components/projections/StatCards';
 import ProjectionChart from '@/components/projections/ProjectionChart';
+import AdvancedSettings from '@/components/projections/AdvancedSettings';
+import DcfResults from '@/components/projections/DcfResults';
 import { calculateProjections, ProjectionInputs } from '@/utils/calculateProjections';
+import { calculateDcf } from '@/utils/calculateDcf';
 
 // Define the structure for cost components
 export interface CostComponent {
@@ -27,6 +31,21 @@ const ProjectionsPage = () => {
 
   const [exchangeRate, setExchangeRate] =useState(3.65);
   const [outputCurrency, setOutputCurrency] = useState<'USD' | 'PEN'>('PEN');
+
+  // Advanced Settings
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [discountRate, setDiscountRate] = useState(12);
+  const [taxRate, setTaxRate] = useState(29.5);
+  const [applyTax, setApplyTax] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const [costComponents, setCostComponents] = useState<CostComponent[]>([
     { id: 1, name: 'Production', value: 54, currency: 'USD' },
@@ -76,6 +95,22 @@ const ProjectionsPage = () => {
     return calculateProjections(fullInputs);
   }, [inputs, unitPriceInPen, unitCostInPen]);
 
+  const dcfData = useMemo(() => {
+    return calculateDcf({
+      projectionData,
+      discountRate,
+      taxRate,
+      applyTax,
+    });
+  }, [projectionData, discountRate, taxRate, applyTax]);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <div className="bg-gray-900 text-white min-h-screen p-4 md:p-6 lg:p-8">
       <header className="flex items-center mb-8">
@@ -104,7 +139,40 @@ const ProjectionsPage = () => {
         </div>
         <StatCards data={projectionData} outputCurrency={outputCurrency} exchangeRate={exchangeRate} />
         <ProjectionChart data={projectionData} outputCurrency={outputCurrency} exchangeRate={exchangeRate} />
+
+        <AdvancedSettings
+            isAdvancedOpen={isAdvancedOpen}
+            setIsAdvancedOpen={setIsAdvancedOpen}
+            discountRate={discountRate}
+            setDiscountRate={setDiscountRate}
+            taxRate={taxRate}
+            setTaxRate={setTaxRate}
+            applyTax={applyTax}
+            setApplyTax={setApplyTax}
+        />
+
+        {isAdvancedOpen && (
+            <DcfResults
+                dcfData={dcfData}
+                outputCurrency={outputCurrency}
+                exchangeRate={exchangeRate}
+                applyTax={applyTax}
+                discountRate={discountRate}
+                inputs={inputs}
+                unitCostInPen={unitCostInPen}
+            />
+        )}
       </main>
+
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-[#2FFFCC] text-white p-3 rounded-full shadow-lg hover:bg-opacity-90 transition-all z-50 focus:outline-none focus:ring-2 focus:ring-[#2FFFCC] focus:ring-opacity-50"
+          aria-label="Back to top"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };
