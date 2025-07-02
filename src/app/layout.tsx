@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Saira, Manrope } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const saira = Saira({
@@ -32,9 +33,25 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${saira.variable} ${manrope.variable} antialiased`}
+        className={`${saira.variable} ${manrope.variable} antialiased bg-gray-50`}
       >
-        {children}
+        <header className="bg-soma-petroleo p-4 shadow-md">
+          <nav className="container mx-auto flex justify-between items-center">
+            <div className="flex items-center space-x-8">
+              <Link href="/">
+                  <img src="/Assets/Soma_Logo.png" alt="Soma Logo" className="h-10 w-auto" />
+              </Link>
+              <div className="hidden md:flex items-center space-x-6">
+                 <Link href="/sales" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Sales</Link>
+                 <Link href="/expenses" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Expenses</Link>
+                 <Link href="/projections" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Projections</Link>
+              </div>
+            </div>
+          </nav>
+        </header>
+        <main className="container mx-auto p-4">
+          {children}
+        </main>
       </body>
     </html>
   );

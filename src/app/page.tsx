@@ -118,7 +118,7 @@ export default function HomePage() {
 
         <section>
           <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Navigate</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             <Link href="/sales" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
               <h3 className="text-lg sm:text-xl font-bold">Sales Data</h3>
               <p className="mt-2 text-gray-400 text-sm sm:text-base">View detailed sales records and analytics.</p>
@@ -126,6 +126,10 @@ export default function HomePage() {
             <Link href="/expenses" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
               <h3 className="text-lg sm:text-xl font-bold">Expenses Data</h3>
               <p className="mt-2 text-gray-400 text-sm sm:text-base">View detailed expense records and summaries.</p>
+            </Link>
+            <Link href="/projections" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
+              <h3 className="text-lg sm:text-xl font-bold">Projections</h3>
+              <p className="mt-2 text-gray-400 text-sm sm:text-base">Forecast future sales and profitability.</p>
             </Link>
           </div>
         </section>
