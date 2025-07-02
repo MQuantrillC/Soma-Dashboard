@@ -2,7 +2,6 @@
 
 import React, { useMemo, useCallback } from 'react';
 import { ChevronDown, Plus, X } from 'lucide-react';
-import { ProjectionInputs } from '@/utils/calculateProjections';
 import { CostComponent } from '@/app/projections/page';
 
 interface InputPanelProps {

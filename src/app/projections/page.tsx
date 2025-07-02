@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import InputPanel from '@/components/projections/InputPanel';
 import StatCards from '@/components/projections/StatCards';
@@ -41,20 +41,20 @@ const ProjectionsPage = () => {
         const valueInPen = component.currency === 'USD' ? component.value * exchangeRate : component.value;
         return total + valueInPen;
     }, 0) / exchangeRate;
-  }, []);
+  }, [costComponents, exchangeRate]);
 
   const [manualUnitCost, setManualUnitCost] = useState({
       value: initialUnitCost,
       currency: 'USD' as 'USD' | 'PEN'
   });
 
-  const normalizeToPen = (value: number, currency: 'USD' | 'PEN') => {
+  const normalizeToPen = useCallback((value: number, currency: 'USD' | 'PEN') => {
       return currency === 'USD' ? value * exchangeRate : value;
-  }
+  }, [exchangeRate])
 
   const unitPriceInPen = useMemo(() => {
     return normalizeToPen(inputs.unitPrice, inputs.unitPriceCurrency);
-  }, [inputs.unitPrice, inputs.unitPriceCurrency, exchangeRate]);
+  }, [inputs.unitPrice, inputs.unitPriceCurrency, normalizeToPen]);
 
   const unitCostInPen = useMemo(() => {
     if (isCostBreakdownOpen) {
@@ -63,7 +63,7 @@ const ProjectionsPage = () => {
       }, 0);
     }
     return normalizeToPen(manualUnitCost.value, manualUnitCost.currency);
-  }, [isCostBreakdownOpen, costComponents, manualUnitCost, exchangeRate]);
+  }, [isCostBreakdownOpen, costComponents, manualUnitCost, normalizeToPen]);
 
 
   // Memoize the projection calculation

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Saira, Manrope } from "next/font/google";
 import Link from "next/link";
+import Image from "next/image";
 import "./globals.css";
 
 const saira = Saira({
@@ -39,7 +40,7 @@ export default function RootLayout({
           <nav className="container mx-auto flex justify-between items-center">
             <div className="flex items-center space-x-8">
               <Link href="/">
-                  <img src="/Assets/Soma_Logo.png" alt="Soma Logo" className="h-10 w-auto" />
+                  <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={40} height={40} className="h-10 w-auto" />
               </Link>
               <div className="hidden md:flex items-center space-x-6">
                  <Link href="/sales" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Sales</Link>
