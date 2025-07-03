@@ -106,7 +106,7 @@ const ProjectionsPage = () => {
         unitCost: unitCostInPen
     };
     return calculateProjections(fullInputs);
-  }, [inputs, unitPriceInPen, unitCostInPen]);
+  }, [inputs, unitCostInPen]);
 
   const dcfData = useMemo(() => {
     return calculateDcf({
@@ -150,8 +150,8 @@ const ProjectionsPage = () => {
                 <button className={`px-4 py-2 text-sm font-bold rounded-r-lg transition-colors ${outputCurrency === 'USD' ? 'bg-soma-aquamarina text-soma-petroleo' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`} onClick={() => setOutputCurrency('USD')}>USD ($)</button>
             </div>
         </div>
-        <StatCards data={projectionData} outputCurrency={outputCurrency} exchangeRate={exchangeRate} />
-        <ProjectionChart data={projectionData} outputCurrency={outputCurrency} exchangeRate={exchangeRate} />
+        <StatCards data={projectionData} outputCurrency={outputCurrency} exchangeRate={typeof exchangeRate === 'string' ? parseFloat(exchangeRate) || 0 : exchangeRate} />
+        <ProjectionChart data={projectionData} outputCurrency={outputCurrency} exchangeRate={typeof exchangeRate === 'string' ? parseFloat(exchangeRate) || 0 : exchangeRate} />
 
         <AdvancedSettings
             isAdvancedOpen={isAdvancedOpen}
