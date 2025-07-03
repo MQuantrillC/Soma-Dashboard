@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useMemo, useCallback } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, Info } from 'lucide-react';
 import { DcfMonth } from '@/utils/calculateDcf';
-import { ProjectionInputs } from '@/utils/calculateProjections';
 import Tooltip from '@/components/Tooltip';
 
 interface DcfResultsProps {
@@ -42,23 +41,22 @@ const StatCard = ({ title, value, tooltipText }: { title: string, value: string,
 );
 
 const DcfResults: React.FC<DcfResultsProps> = ({ dcfData, outputCurrency, exchangeRate, applyTax, discountRate, inputs, unitCostInPen }) => {
-    if (!dcfData || dcfData.length === 0) return null;
-
-    const formatCurrency = (value: number) => {
+    
+    const formatCurrency = useCallback((value: number) => {
         const displayValue = outputCurrency === 'USD' ? value / exchangeRate : value;
         const symbol = outputCurrency === 'USD' ? '$' : 'S/.';
         return `${symbol}${displayValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
+    }, [outputCurrency, exchangeRate]);
     
     const settingsSummary = useMemo(() => {
+        if (!inputs) return "";
         const price = formatCurrency(inputs.unitPriceCurrency === 'USD' ? inputs.unitPrice * exchangeRate : inputs.unitPrice);
         const cost = formatCurrency(unitCostInPen);
         return `Calculations based on a unit price of ${price}, a unit cost of ${cost}, and starting sales of ${inputs.startUnits} units, growing at ${inputs.growthRate}% monthly.`;
-    }, [inputs, unitCostInPen, outputCurrency, exchangeRate]);
-
-    const npv = dcfData[dcfData.length - 1].cumulativeNpv;
+    }, [inputs, unitCostInPen, exchangeRate, formatCurrency]);
 
     const yAxisDomain = useMemo(() => {
+        if (!dcfData || dcfData.length === 0) return [0, 0];
         const monthlyDiscountRate = Math.pow(1 + discountRate / 100, 1 / 12) - 1;
         const maxDiscountedProfit = Math.max(
             ...dcfData.map((month, index) => month.profit / Math.pow(1 + monthlyDiscountRate, index + 1))
@@ -66,12 +64,9 @@ const DcfResults: React.FC<DcfResultsProps> = ({ dcfData, outputCurrency, exchan
         return [0, maxDiscountedProfit * 1.1]; // Add 10% padding
     }, [dcfData, discountRate]);
 
-    const scrollToTop = () => {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth',
-        });
-    };
+    if (!dcfData || dcfData.length === 0) return null;
+
+    const npv = dcfData[dcfData.length - 1].cumulativeNpv;
 
     return (
         <div className="space-y-8">
