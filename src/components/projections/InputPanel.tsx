@@ -54,9 +54,27 @@ const InputPanel: React.FC<InputPanelProps> = ({
     handleInputChange(field, isNaN(num) ? 0 : num);
   };
 
-  const handleFloatInputChange = (field: keyof InputPanelProps['inputs'], value: string) => {
+  const handleDecimalStringChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (value: any) => void
+  ) => {
+    const { value } = e.target;
+    // Regex allows empty string, numbers, and numbers ending with a decimal.
+    if (/^(\d*\.?\d*)$/.test(value)) {
+        setter(value);
+    }
+  };
+
+  const handleRateChange = (setter: React.Dispatch<React.SetStateAction<number>>, value: string) => {
+    if (value === '' || value.endsWith('.') || !isNaN(parseFloat(value))) {
+        setter(value as any); // Temporarily allow string
+    }
     const num = parseFloat(value);
-    handleInputChange(field, isNaN(num) ? 0 : num);
+    if (!isNaN(num)) {
+        setter(num);
+    } else if (value === '') {
+        setter(0);
+    }
   };
 
   const addCostComponent = useCallback(() => {
@@ -118,7 +136,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
                     type="text"
                     inputMode="decimal"
                     value={inputs.unitPrice || ''}
-                    onChange={e => handleFloatInputChange('unitPrice', e.target.value)}
+                    onChange={e => handleDecimalStringChange(e, (val) => handleInputChange('unitPrice', val))}
+                    onBlur={e => handleInputChange('unitPrice', parseFloat(e.target.value) || 0)}
                     className="block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50"
                 />
                 <CurrencyToggle currency={inputs.unitPriceCurrency} setCurrency={(c: 'USD' | 'PEN') => handleInputChange('unitPriceCurrency', c)} />
@@ -134,7 +153,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
                 type="text"
                 inputMode="decimal"
                 value={isCostBreakdownOpen ? unitCostFromComponents.toFixed(2) : (manualUnitCost.value || '')}
-                onChange={e => setManualUnitCost(prev => ({...prev, value: parseFloat(e.target.value) || 0}))}
+                onChange={e => handleDecimalStringChange(e, (val) => setManualUnitCost(prev => ({...prev, value: val})))}
+                onBlur={e => setManualUnitCost(prev => ({...prev, value: parseFloat(e.target.value) || 0}))}
                 readOnly={isCostBreakdownOpen}
                 className={`block w-full rounded-md border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50 ${isCostBreakdownOpen ? 'bg-gray-900 cursor-not-allowed' : 'bg-gray-700'}`}
                 />
@@ -172,7 +192,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
                 type="text"
                 inputMode="decimal"
                 value={exchangeRate || ''}
-                onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
+                onChange={e => handleDecimalStringChange(e, setExchangeRate)}
+                onBlur={e => setExchangeRate(parseFloat(e.target.value) || 0)}
                 className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50"
             />
         </label>
@@ -199,7 +220,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
                         type="text"
                         inputMode="decimal"
                         value={cost.value || ''}
-                        onChange={e => updateCostComponent(cost.id, 'value', parseFloat(e.target.value) || 0)}
+                        onChange={e => handleDecimalStringChange(e, (val) => updateCostComponent(cost.id, 'value', val))}
+                        onBlur={e => updateCostComponent(cost.id, 'value', parseFloat(e.target.value) || 0)}
                         className="pl-7 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50"
                     />
                   </div>
