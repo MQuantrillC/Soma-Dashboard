@@ -7,10 +7,10 @@ import Tooltip from '@/components/Tooltip';
 interface AdvancedSettingsProps {
   isAdvancedOpen: boolean;
   setIsAdvancedOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  discountRate: number;
-  setDiscountRate: (value: number) => void;
-  taxRate: number;
-  setTaxRate: (value: number) => void;
+  discountRate: number | string;
+  setDiscountRate: (value: number | string) => void;
+  taxRate: number | string;
+  setTaxRate: (value: number | string) => void;
   applyTax: boolean;
   setApplyTax: (value: boolean) => void;
 }
@@ -70,7 +70,12 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                 type="text"
                 inputMode="decimal"
                 value={discountRate || ''}
-                onChange={e => setDiscountRate(parseFloat(e.target.value) || 0)}
+                onChange={e => {
+                    if (e.target.value.match(/^(\d*\.?\d*)$/)) {
+                        setDiscountRate(e.target.value)
+                    }
+                }}
+                onBlur={e => setDiscountRate(parseFloat(e.target.value) || 0)}
                 className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50"
               />
             </label>
@@ -81,7 +86,12 @@ const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                 type="text"
                 inputMode="decimal"
                 value={taxRate || ''}
-                onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
+                onChange={e => {
+                    if (e.target.value.match(/^(\d*\.?\d*)$/)) {
+                        setTaxRate(e.target.value)
+                    }
+                }}
+                onBlur={e => setTaxRate(parseFloat(e.target.value) || 0)}
                 disabled={!applyTax}
                 className={`mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50 ${
                   !applyTax ? 'opacity-50 cursor-not-allowed' : ''

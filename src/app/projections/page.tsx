@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { ChevronUp } from 'lucide-react';
-import InputPanel from '@/components/projections/InputPanel';
+// import InputPanel from '@/components/projections/InputPanel';
 import StatCards from '@/components/projections/StatCards';
 import ProjectionChart from '@/components/projections/ProjectionChart';
 import AdvancedSettings from '@/components/projections/AdvancedSettings';
@@ -11,11 +12,18 @@ import DcfResults from '@/components/projections/DcfResults';
 import { calculateProjections, ProjectionInputs } from '@/utils/calculateProjections';
 import { calculateDcf } from '@/utils/calculateDcf';
 
+
+// Dynamically import InputPanel with SSR turned off to prevent hydration errors
+const InputPanel = dynamic(() => import('@/components/projections/InputPanel'), {
+    ssr: false,
+    loading: () => <div className="bg-gray-800 p-6 rounded-xl shadow-lg h-[300px] animate-pulse"></div> // Optional loading state
+});
+
 // Define the structure for cost components
 export interface CostComponent {
   id: number;
   name: string;
-  value: number;
+  value: number | string;
   currency: 'USD' | 'PEN';
 }
 
@@ -24,18 +32,18 @@ const ProjectionsPage = () => {
   const [inputs, setInputs] = useState({
     startUnits: 10,
     growthRate: 10,
-    unitPrice: 549,
+    unitPrice: 549 as number | string,
     unitPriceCurrency: 'PEN' as 'USD' | 'PEN',
     timeFrame: 12,
   });
 
-  const [exchangeRate, setExchangeRate] =useState(3.65);
+  const [exchangeRate, setExchangeRate] =useState<number | string>(3.65);
   const [outputCurrency, setOutputCurrency] = useState<'USD' | 'PEN'>('PEN');
 
   // Advanced Settings
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [discountRate, setDiscountRate] = useState(12);
-  const [taxRate, setTaxRate] = useState(29.5);
+  const [discountRate, setDiscountRate] = useState<number | string>(12);
+  const [taxRate, setTaxRate] = useState<number | string>(29.5);
   const [applyTax, setApplyTax] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -55,20 +63,25 @@ const ProjectionsPage = () => {
   const [isCostBreakdownOpen, setIsCostBreakdownOpen] = useState(false);
 
   const initialUnitCost = useMemo(() => {
+    const numExchangeRate = typeof exchangeRate === 'string' ? parseFloat(exchangeRate) : exchangeRate;
+    if (isNaN(numExchangeRate) || numExchangeRate === 0) return 0;
+    
     return costComponents.reduce((total, component) => {
-        // A simple assumption that initial costs are USD if not specified otherwise
-        const valueInPen = component.currency === 'USD' ? component.value * exchangeRate : component.value;
+        const compValue = typeof component.value === 'string' ? parseFloat(component.value) : component.value;
+        const valueInPen = component.currency === 'USD' ? compValue * numExchangeRate : compValue;
         return total + valueInPen;
-    }, 0) / exchangeRate;
+    }, 0) / numExchangeRate;
   }, [costComponents, exchangeRate]);
 
-  const [manualUnitCost, setManualUnitCost] = useState({
+  const [manualUnitCost, setManualUnitCost] = useState<{ value: number | string; currency: 'USD' | 'PEN' }>({
       value: initialUnitCost,
       currency: 'USD' as 'USD' | 'PEN'
   });
 
-  const normalizeToPen = useCallback((value: number, currency: 'USD' | 'PEN') => {
-      return currency === 'USD' ? value * exchangeRate : value;
+  const normalizeToPen = useCallback((value: number | string, currency: 'USD' | 'PEN') => {
+      const numValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+      const numExchangeRate = typeof exchangeRate === 'string' ? parseFloat(exchangeRate) || 0 : exchangeRate;
+      return currency === 'USD' ? numValue * numExchangeRate : numValue;
   }, [exchangeRate])
 
   const unitPriceInPen = useMemo(() => {
@@ -89,7 +102,7 @@ const ProjectionsPage = () => {
   const projectionData = useMemo(() => {
     const fullInputs: ProjectionInputs = {
         ...inputs,
-        unitPrice: unitPriceInPen,
+        unitPrice: typeof inputs.unitPrice === 'string' ? parseFloat(inputs.unitPrice) || 0 : inputs.unitPrice,
         unitCost: unitCostInPen
     };
     return calculateProjections(fullInputs);
@@ -98,8 +111,8 @@ const ProjectionsPage = () => {
   const dcfData = useMemo(() => {
     return calculateDcf({
       projectionData,
-      discountRate,
-      taxRate,
+      discountRate: typeof discountRate === 'string' ? parseFloat(discountRate) || 0 : discountRate,
+      taxRate: typeof taxRate === 'string' ? parseFloat(taxRate) || 0 : taxRate,
       applyTax,
     });
   }, [projectionData, discountRate, taxRate, applyTax]);
@@ -155,10 +168,13 @@ const ProjectionsPage = () => {
             <DcfResults
                 dcfData={dcfData}
                 outputCurrency={outputCurrency}
-                exchangeRate={exchangeRate}
+                exchangeRate={typeof exchangeRate === 'string' ? parseFloat(exchangeRate) || 0 : exchangeRate}
                 applyTax={applyTax}
-                discountRate={discountRate}
-                inputs={inputs}
+                discountRate={typeof discountRate === 'string' ? parseFloat(discountRate) || 0 : discountRate}
+                inputs={{
+                    ...inputs,
+                    unitPrice: typeof inputs.unitPrice === 'string' ? parseFloat(inputs.unitPrice) || 0 : inputs.unitPrice,
+                }}
                 unitCostInPen={unitCostInPen}
             />
         )}

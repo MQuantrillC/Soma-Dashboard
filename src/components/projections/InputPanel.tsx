@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { ChevronDown, Plus, X } from 'lucide-react';
 import { CostComponent } from '@/app/projections/page';
 
@@ -8,7 +8,7 @@ interface InputPanelProps {
   inputs: {
     startUnits: number;
     growthRate: number;
-    unitPrice: number;
+    unitPrice: number | string;
     unitPriceCurrency: 'USD' | 'PEN';
     timeFrame: number;
   };
@@ -17,10 +17,10 @@ interface InputPanelProps {
   setCostComponents: React.Dispatch<React.SetStateAction<CostComponent[]>>;
   isCostBreakdownOpen: boolean;
   setIsCostBreakdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  manualUnitCost: { value: number; currency: 'USD' | 'PEN' };
-  setManualUnitCost: React.Dispatch<React.SetStateAction<{ value: number; currency: 'USD' | 'PEN' }>>;
-  exchangeRate: number;
-  setExchangeRate: React.Dispatch<React.SetStateAction<number>>;
+  manualUnitCost: { value: number | string; currency: 'USD' | 'PEN' };
+  setManualUnitCost: React.Dispatch<React.SetStateAction<{ value: number | string; currency: 'USD' | 'PEN' }>>;
+  exchangeRate: number | string;
+  setExchangeRate: React.Dispatch<React.SetStateAction<number | string>>;
 }
 
 const CurrencyToggle = ({ currency, setCurrency }: { currency: 'USD' | 'PEN', setCurrency: (currency: 'USD' | 'PEN') => void }) => (
@@ -69,12 +69,16 @@ const InputPanel: React.FC<InputPanelProps> = ({
   }, [setCostComponents]);
 
   const unitCostFromComponents = useMemo(() => {
+    const numExchangeRate = typeof exchangeRate === 'string' ? parseFloat(exchangeRate) : exchangeRate;
+    if (isNaN(numExchangeRate) || numExchangeRate === 0) return 0;
+
     return costComponents.reduce((total, component) => {
+        const compValue = typeof component.value === 'string' ? parseFloat(component.value) || 0 : component.value;
         const valueInManualCurrency = component.currency === manualUnitCost.currency 
-            ? component.value
+            ? compValue
             : component.currency === 'USD'
-            ? component.value * exchangeRate
-            : component.value / exchangeRate;
+            ? compValue * numExchangeRate
+            : compValue / numExchangeRate;
         return total + valueInManualCurrency;
     }, 0)
   }, [costComponents, manualUnitCost.currency, exchangeRate]);
@@ -112,8 +116,12 @@ const InputPanel: React.FC<InputPanelProps> = ({
                 <input
                     type="text"
                     inputMode="decimal"
-                    value={inputs.unitPrice || ''}
-                    onChange={e => handleInputChange('unitPrice', e.target.value.match(/^(\d*\.?\d*)$/) ? e.target.value : inputs.unitPrice)}
+                    value={inputs.unitPrice}
+                    onChange={e => {
+                        if (e.target.value.match(/^(\d*\.?\d*)$/)) {
+                            handleInputChange('unitPrice', e.target.value);
+                        }
+                    }}
                     onBlur={e => handleInputChange('unitPrice', parseFloat(e.target.value) || 0)}
                     className="block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50"
                 />
@@ -129,13 +137,17 @@ const InputPanel: React.FC<InputPanelProps> = ({
                 <input
                 type="text"
                 inputMode="decimal"
-                value={isCostBreakdownOpen ? unitCostFromComponents.toFixed(2) : (manualUnitCost.value || '')}
+                value={isCostBreakdownOpen ? unitCostFromComponents.toFixed(2) : manualUnitCost.value}
                 onChange={e => {
-                    if (e.target.value.match(/^(\d*\.?\d*)$/)) {
-                        setManualUnitCost(prev => ({...prev, value: e.target.value as any}));
+                    if (e.target.value.match(/^(\d*\.?\d*)$/) && !isCostBreakdownOpen) {
+                         setManualUnitCost(prev => ({...prev, value: e.target.value }));
                     }
                 }}
-                onBlur={e => setManualUnitCost(prev => ({...prev, value: parseFloat(e.target.value) || 0}))}
+                onBlur={e => {
+                    if (!isCostBreakdownOpen) {
+                        setManualUnitCost(prev => ({...prev, value: parseFloat(e.target.value as string) || 0 }));
+                    }
+                }}
                 readOnly={isCostBreakdownOpen}
                 className={`block w-full rounded-md border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50 ${isCostBreakdownOpen ? 'bg-gray-900 cursor-not-allowed' : 'bg-gray-700'}`}
                 />
@@ -172,13 +184,13 @@ const InputPanel: React.FC<InputPanelProps> = ({
             <input
                 type="text"
                 inputMode="decimal"
-                value={exchangeRate || ''}
+                value={exchangeRate}
                 onChange={e => {
                     if (e.target.value.match(/^(\d*\.?\d*)$/)) {
-                        setExchangeRate(e.target.value as any);
+                        setExchangeRate(e.target.value);
                     }
                 }}
-                onBlur={e => setExchangeRate(parseFloat(e.target.value) || 0)}
+                onBlur={e => setExchangeRate(parseFloat(e.target.value as string) || 0)}
                 className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-soma-aquamarina focus:ring focus:ring-soma-aquamarina focus:ring-opacity-50"
             />
         </label>
@@ -204,10 +216,10 @@ const InputPanel: React.FC<InputPanelProps> = ({
                     <input
                         type="text"
                         inputMode="decimal"
-                        value={cost.value || ''}
+                        value={cost.value}
                         onChange={e => {
                             if (e.target.value.match(/^(\d*\.?\d*)$/)) {
-                                updateCostComponent(cost.id, 'value', e.target.value as any);
+                                updateCostComponent(cost.id, 'value', e.target.value);
                             }
                         }}
                         onBlur={e => updateCostComponent(cost.id, 'value', parseFloat(e.target.value) || 0)}
