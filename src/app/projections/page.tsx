@@ -102,11 +102,11 @@ const ProjectionsPage = () => {
   const projectionData = useMemo(() => {
     const fullInputs: ProjectionInputs = {
         ...inputs,
-        unitPrice: typeof inputs.unitPrice === 'string' ? parseFloat(inputs.unitPrice) || 0 : inputs.unitPrice,
+        unitPrice: unitPriceInPen,
         unitCost: unitCostInPen
     };
     return calculateProjections(fullInputs);
-  }, [inputs, unitCostInPen]);
+  }, [inputs, unitCostInPen, unitPriceInPen]);
 
   const dcfData = useMemo(() => {
     return calculateDcf({
