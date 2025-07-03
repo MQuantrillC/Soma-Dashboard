@@ -10,13 +10,13 @@ const segments = [
         coreNeeds: [
             'Stay sharp and perform under pressure',
             'Integrate seamlessly into a busy, smart-device-heavy lifestyle',
-            'Reduce mental fatigue, track recovery effortlessly'
+            'Reduce mental fatigue, track body health without effort'
         ],
         keywords: ['Discreet', 'Efficiency', 'Non-intrusive', 'Data-driven'],
         messagingPhrases: [
             'Optimize your most valuable asset: yourself.',
             'Master your day, discreetly.',
-            'Data that works behind the scenes — just like you.'
+            'Data that works behind the scenes'
         ],
         somaFit: [
             '5–7 day battery life, no screen clutter',
@@ -29,7 +29,7 @@ const segments = [
         title: 'Athletes',
         coreNeeds: [
             'Improve recovery, optimize performance',
-            'Track effort, fatigue, and strain daily',
+            'Track effort, fatigue, and output daily',
             'Make data-informed training decisions'
         ],
         keywords: ['Performance', 'Intensity', 'Progression', 'Gains'],

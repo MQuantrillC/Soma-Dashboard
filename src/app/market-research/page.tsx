@@ -1,8 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
-import { Search, Users, Bot } from 'lucide-react';
+import { Users, Bot, Megaphone } from 'lucide-react';
 import CompetitorTable from '@/components/market-research/CompetitorTable';
 import CustomerSegments from '@/components/market-research/CustomerSegments';
+import MarketingStrategy from '@/components/market-research/MarketingStrategy';
 
 const MarketResearchPage = () => {
     return (
@@ -19,6 +20,14 @@ const MarketResearchPage = () => {
                         <h2 className="text-xl font-bold font-saira">Customer Segments & Messaging</h2>
                     </div>
                     <CustomerSegments />
+                </section>
+
+                <section>
+                    <div className="flex items-center mb-4">
+                        <Megaphone className="w-6 h-6 mr-3 text-soma-aquamarina" />
+                        <h2 className="text-xl font-bold font-saira">Marketing Strategy & Brand Positioning</h2>
+                    </div>
+                    <MarketingStrategy />
                 </section>
 
                 <section>
