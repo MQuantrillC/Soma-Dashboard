@@ -86,7 +86,7 @@ const StrategyCard = ({ card }: { card: (typeof strategies)[0] }) => (
                 <div className="pt-2">
                     <h4 className="font-bold text-soma-aquamarina/90 mb-2">Example Titles</h4>
                     <ul className="list-disc list-inside space-y-1 text-sm italic">
-                         {card.examples.map(item => <li key={item}>"{item}"</li>)}
+                         {card.examples.map(item => <li key={item}>&quot;{item}&quot;</li>)}
                     </ul>
                 </div>
             )}

@@ -90,7 +90,7 @@ const SegmentCard = ({ icon: Icon, title, coreNeeds, messagingPhrases, somaFit }
                 <h4 className="font-bold text-soma-aquamarina/90 mb-2">Key Messaging</h4>
                 <div className="space-y-2">
                     {messagingPhrases.map((phrase) => (
-                        <p key={phrase} className="italic text-gray-400">"{phrase}"</p>
+                        <p key={phrase} className="italic text-gray-400">&quot;{phrase}&quot;</p>
                     ))}
                 </div>
             </div>
