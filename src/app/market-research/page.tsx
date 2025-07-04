@@ -10,7 +10,7 @@ const MarketResearchPage = () => {
         <div className="bg-gray-900 text-white min-h-screen p-4 md:p-6 lg:p-8">
             <header className="flex items-center mb-8">
                 <Image src="/Assets/Soma_Logo.png" alt="Soma Logo" width={40} height={40} className="h-10 w-auto mr-4" />
-                <h1 className="text-2xl sm:text-3xl font-bold font-saira">Market Research</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold font-saira">Market Intelligence</h1>
             </header>
 
             <main className="space-y-12">
