@@ -47,6 +47,7 @@ export default function RootLayout({
                  <Link href="/expenses" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Expenses</Link>
                  <Link href="/projections" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Projections</Link>
                  <Link href="/market-research" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Market Intelligence</Link>
+                 <Link href="/business-model" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Business Model</Link>
               </div>
             </div>
           </nav>
