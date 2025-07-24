@@ -224,6 +224,171 @@ export default function ExpensesPage() {
 
   const monthlySummary = calculateMonthlySummary();
 
+  // Calculate recurrent expenses
+  const calculateRecurrentExpenses = () => {
+    if (!data || !data.rows.length) {
+      return [];
+    }
+
+    const dateHeader = data.headers.find(h => 
+      h.trim().toLowerCase().includes('fecha') || h.trim().toLowerCase().includes('date')
+    );
+    
+    // Try to find concept and description columns
+    const conceptHeader = data.headers.find(h => 
+      h.trim().toLowerCase().includes('concept') || 
+      h.trim().toLowerCase().includes('concepto') ||
+      h.trim().toLowerCase().includes('category') ||
+      h.trim().toLowerCase().includes('categoria')
+    );
+    
+    const descriptionHeader = data.headers.find(h => 
+      h.trim().toLowerCase().includes('description') || 
+      h.trim().toLowerCase().includes('descripcion') ||
+      h.trim().toLowerCase().includes('detalle') ||
+      h.trim().toLowerCase().includes('detail')
+    );
+
+    // If we can't find specific concept/description columns, try to find any text-based columns
+    const fallbackTextHeaders = data.headers.filter(h => {
+      const lowerH = h.trim().toLowerCase();
+      return !lowerH.includes('date') && 
+             !lowerH.includes('fecha') && 
+             !lowerH.includes('usd') && 
+             !lowerH.includes('pen') && 
+             !lowerH.includes('sol') && 
+             !lowerH.includes('total') &&
+             !lowerH.includes('amount');
+    });
+
+    if (!dateHeader || (!conceptHeader && !descriptionHeader && fallbackTextHeaders.length === 0)) {
+      return [];
+    }
+
+    // Group expenses by concept+description combination
+    const expenseGroups: { [key: string]: {
+      concept: string;
+      description: string;
+      months: Set<string>;
+      occurrences: Array<{
+        date: string;
+        month: string;
+        amount: string;
+        totalAmount: string;
+      }>;
+      totalOccurrences: number;
+      avgMonthlyAmount: number;
+    }} = {};
+
+    data.rows.forEach(row => {
+      const dateValue = row[dateHeader];
+      if (!dateValue) return;
+
+      let date;
+      let monthYear;
+      
+      if (typeof dateValue === 'string' && dateValue.startsWith('Date(')) {
+        const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (match) {
+          date = new Date(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+          monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        } else {
+          return;
+        }
+      } else {
+        date = new Date(dateValue);
+        if (isNaN(date.getTime())) return;
+        monthYear = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      }
+
+      // Get concept and description values
+      let concept = '';
+      let description = '';
+      
+      if (conceptHeader) {
+        const conceptValue = row[conceptHeader];
+        concept = conceptValue !== null && conceptValue !== undefined ? String(conceptValue).trim() : '';
+      }
+      
+      if (descriptionHeader) {
+        const descriptionValue = row[descriptionHeader];
+        description = descriptionValue !== null && descriptionValue !== undefined ? String(descriptionValue).trim() : '';
+      }
+      
+              // If no specific concept/description found, use first available text columns
+        if (!concept && !description && fallbackTextHeaders.length > 0) {
+          const firstValue = row[fallbackTextHeaders[0]];
+          concept = firstValue !== null && firstValue !== undefined ? String(firstValue).trim() : '';
+          if (fallbackTextHeaders.length > 1) {
+            const secondValue = row[fallbackTextHeaders[1]];
+            description = secondValue !== null && secondValue !== undefined ? String(secondValue).trim() : '';
+          }
+        }
+
+      // Skip if both concept and description are empty
+      if (!concept && !description) return;
+
+      const key = `${concept}_${description}`.toLowerCase();
+      
+      // Get amount information
+      const usdHeader = data.headers.find(h => 
+        h.trim().toUpperCase() === 'USD' || 
+        h.trim().toUpperCase().includes('DOLLAR')
+      );
+      const penHeader = data.headers.find(h => 
+        h.trim().toUpperCase() === 'PEN' || 
+        h.trim().toUpperCase().includes('SOL')
+      );
+      const totalPenHeader = data.headers.find(h => 
+        h.trim().toUpperCase() === 'TOTAL PEN'
+      );
+
+      const usdAmount: string = usdHeader ? String(row[usdHeader] || '0') : '0';
+      const penAmount: string = penHeader ? String(row[penHeader] || '0') : '0';
+      const totalAmount: string = totalPenHeader ? String(row[totalPenHeader] || '0') : '0';
+
+      const numericTotal = parseFloat(totalAmount.replace(/[^\d.-]/g, '')) || 0;
+
+      if (!expenseGroups[key]) {
+        expenseGroups[key] = {
+          concept,
+          description,
+          months: new Set(),
+          occurrences: [],
+          totalOccurrences: 0,
+          avgMonthlyAmount: 0
+        };
+      }
+
+      expenseGroups[key].months.add(monthYear);
+      expenseGroups[key].occurrences.push({
+        date: formatDate(dateValue),
+        month: monthYear,
+        amount: `${formatCurrency(usdAmount, 'USD')} / ${formatCurrency(penAmount, 'PEN')}`,
+        totalAmount: formatCurrency(totalAmount, 'PEN')
+      });
+      expenseGroups[key].totalOccurrences++;
+    });
+
+    // Filter for recurrent expenses (appearing in at least 2 different months)
+    const recurrentExpenses = Object.values(expenseGroups)
+      .filter(group => group.months.size >= 2)
+      .map(group => {
+        // Calculate average monthly amount
+        const totalSum = group.occurrences.reduce((sum, occ) => {
+          const numAmount = parseFloat(occ.totalAmount.replace(/[^\d.-]/g, '')) || 0;
+          return sum + numAmount;
+        }, 0);
+        group.avgMonthlyAmount = totalSum / group.months.size;
+        return group;
+      })
+      .sort((a, b) => b.avgMonthlyAmount - a.avgMonthlyAmount); // Sort by highest average amount
+
+    return recurrentExpenses;
+  };
+
+  const recurrentExpenses = calculateRecurrentExpenses();
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -354,6 +519,35 @@ export default function ExpensesPage() {
                       <td className="p-3 sm:p-4 text-right">{formatCurrency(summary.usd, 'USD')}</td>
                       <td className="p-3 sm:p-4 text-right">{formatCurrency(summary.pen, 'PEN')}</td>
                       <td className="p-3 sm:p-4 text-right">{formatCurrency(summary.local, 'PEN')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Recurrent Expenses */}
+        {recurrentExpenses.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Recurrent Expenses</h2>
+            <div className="overflow-x-auto bg-gray-800 rounded-lg">
+              <table className="min-w-full text-left text-sm text-gray-300">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th scope="col" className="p-3 sm:p-4">Concept</th>
+                    <th scope="col" className="p-3 sm:p-4">Description</th>
+                    <th scope="col" className="p-3 sm:p-4 text-right">Avg Monthly Amount</th>
+                    <th scope="col" className="p-3 sm:p-4 text-right">Occurrences</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {recurrentExpenses.map((group, index) => (
+                    <tr key={index}>
+                      <td className="p-3 sm:p-4 font-semibold">{group.concept}</td>
+                      <td className="p-3 sm:p-4">{group.description}</td>
+                      <td className="p-3 sm:p-4 text-right">{formatCurrency(group.avgMonthlyAmount, 'PEN')}</td>
+                      <td className="p-3 sm:p-4 text-right">{group.totalOccurrences}</td>
                     </tr>
                   ))}
                 </tbody>
