@@ -347,8 +347,6 @@ export default function ExpensesPage() {
       const penAmount: string = penHeader ? String(row[penHeader] || '0') : '0';
       const totalAmount: string = totalPenHeader ? String(row[totalPenHeader] || '0') : '0';
 
-      const numericTotal = parseFloat(totalAmount.replace(/[^\d.-]/g, '')) || 0;
-
       if (!expenseGroups[key]) {
         expenseGroups[key] = {
           concept,
