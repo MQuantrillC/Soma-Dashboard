@@ -360,10 +360,10 @@ export default function ExpensesPage() {
 
       expenseGroups[key].months.add(monthYear);
       expenseGroups[key].occurrences.push({
-        date: formatDate(dateValue),
+        date: String(formatDate(dateValue)),
         month: monthYear,
         amount: `${formatCurrency(usdAmount, 'USD')} / ${formatCurrency(penAmount, 'PEN')}`,
-        totalAmount: formatCurrency(totalAmount, 'PEN')
+        totalAmount: String(formatCurrency(totalAmount, 'PEN'))
       });
       expenseGroups[key].totalOccurrences++;
     });
