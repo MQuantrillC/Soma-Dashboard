@@ -45,6 +45,7 @@ export default function RootLayout({
               <div className="hidden md:flex items-center space-x-6">
                  <Link href="/sales" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Sales</Link>
                  <Link href="/expenses" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Expenses</Link>
+                 <Link href="/financials" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Financials</Link>
                  <Link href="/projections" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Projections</Link>
                  <Link href="/market-research" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Market Intelligence</Link>
                  <Link href="/business-model" className="text-white hover:text-soma-aquamarina transition-colors font-medium">Business Model</Link>

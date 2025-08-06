@@ -127,6 +127,10 @@ export default function HomePage() {
               <h3 className="text-lg sm:text-xl font-bold">Expenses Data</h3>
               <p className="mt-2 text-gray-400 text-sm sm:text-base">View detailed expense records and summaries.</p>
             </Link>
+            <Link href="/financials" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
+              <h3 className="text-lg sm:text-xl font-bold">Financial Dashboard</h3>
+              <p className="mt-2 text-gray-400 text-sm sm:text-base">Calculate and visualize financial performance with dynamic inputs.</p>
+            </Link>
             <Link href="/projections" className="block p-4 sm:p-6 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 hover:border-gray-500 transition-colors">
               <h3 className="text-lg sm:text-xl font-bold">Projections</h3>
               <p className="mt-2 text-gray-400 text-sm sm:text-base">Forecast future sales and profitability.</p>
