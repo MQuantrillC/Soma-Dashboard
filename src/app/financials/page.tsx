@@ -6,27 +6,19 @@ import {
   ChevronDown, 
   ChevronUp, 
   DollarSign, 
-  TrendingUp, 
   Calculator,
-  PieChart,
-  Globe,
   X,
   Plus
 } from 'lucide-react';
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
-  PieChart as RechartsPieChart,
-  Pie,
   Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from 'recharts';
 
 interface CostItem {
@@ -220,9 +212,6 @@ const FinancialsPage = () => {
   });
 
   // UI state
-  const [isCostBreakdownOpen, setIsCostBreakdownOpen] = useState(false);
-  const [currencyView, setCurrencyView] = useState<'USD' | 'PEN'>('USD');
-  const [currencyToggleOpen, setCurrencyToggleOpen] = useState(false);
   const [costParametersOpen, setCostParametersOpen] = useState(false);
   
   // Dynamic costs state
@@ -267,8 +256,8 @@ const FinancialsPage = () => {
       cogsEnabled, cogsAmount, cogsCurrency, cogsCustomExchangeRate,
       salesCostsEnabled, mercadoPagoEnabled, mercadoPagoFee, shopifyFeeEnabled, shopifyFee, shopifyTransactionEnabled, shopifyTransactionFee, shopifyTransactionCurrency,
       shippingEnabled, impuestosEnabled, impuestosAmount, impuestosCurrency, impuestosCustomExchangeRate, dhlArancelesEnabled, dhlArancelesAmount, dhlArancelesCurrency, dhlArancelesCustomExchangeRate, dhlNacionalizacionEnabled, dhlNacionalizacionAmount, dhlNacionalizacionCurrency, dhlNacionalizacionCustomExchangeRate,
-      packagingEnabled, paquetesEnabled, paquetesAmount, paquetesCurrency, paquetesCustomExchangeRate, stickersEnabled, stickersAmount, stickersCurrency, stickersCustomExchangeRate,
-      deliveryEnabled, deliveryPerUnit, deliveryCurrency, deliveryCustomExchangeRate,
+      packagingEnabled, paquetesEnabled, paquetesAmount, paquetesCurrency, stickersEnabled, stickersAmount, stickersCurrency,
+      deliveryEnabled, deliveryPerUnit, deliveryCurrency,
       recurringEnabled, appleDevEnabled, appleDevAmount, appleDevCurrency, appleDevCustomExchangeRate, googleWorkspaceEnabled, googleWorkspaceAmount, googleWorkspaceCurrency, googleWorkspaceCustomExchangeRate, shopifyRecurringEnabled, shopifyRecurringAmount, shopifyRecurringCurrency, shopifyRecurringCustomExchangeRate, contabilidadEnabled, contabilidadAmount, contabilidadCurrency, contabilidadCustomExchangeRate, firebaseEnabled, firebaseAmount, firebaseCurrency, firebaseCustomExchangeRate
     } = inputs;
     
@@ -339,21 +328,23 @@ const FinancialsPage = () => {
     let packagingCostsPEN = 0;
     if (packagingEnabled) {
       if (paquetesEnabled) {
+        const currentExchangeRate = customExchangeRatesEnabled ? inputs.paquetesCustomExchangeRate : exchangeRate;
         if (paquetesCurrency === 'PEN') {
           packagingCostsPEN += paquetesAmount;
-          packagingCostsUSD += paquetesAmount / exchangeRate;
+          packagingCostsUSD += paquetesAmount / currentExchangeRate;
         } else {
           packagingCostsUSD += paquetesAmount;
-          packagingCostsPEN += paquetesAmount * exchangeRate;
+          packagingCostsPEN += paquetesAmount * currentExchangeRate;
         }
       }
       if (stickersEnabled) {
+        const currentExchangeRate = customExchangeRatesEnabled ? inputs.stickersCustomExchangeRate : exchangeRate;
         if (stickersCurrency === 'PEN') {
           packagingCostsPEN += stickersAmount;
-          packagingCostsUSD += stickersAmount / exchangeRate;
+          packagingCostsUSD += stickersAmount / currentExchangeRate;
         } else {
           packagingCostsUSD += stickersAmount;
-          packagingCostsPEN += stickersAmount * exchangeRate;
+          packagingCostsPEN += stickersAmount * currentExchangeRate;
         }
       }
     }
@@ -361,12 +352,13 @@ const FinancialsPage = () => {
     let deliveryCostsUSD = 0;
     let deliveryCostsPEN = 0;
     if (deliveryEnabled) {
+      const currentExchangeRate = customExchangeRatesEnabled ? inputs.deliveryCustomExchangeRate : exchangeRate;
       if (deliveryCurrency === 'PEN') {
         deliveryCostsPEN = unitsSold * deliveryPerUnit;
-        deliveryCostsUSD = deliveryCostsPEN / exchangeRate;
+        deliveryCostsUSD = deliveryCostsPEN / currentExchangeRate;
       } else {
         deliveryCostsUSD = unitsSold * deliveryPerUnit;
-        deliveryCostsPEN = deliveryCostsUSD * exchangeRate;
+        deliveryCostsPEN = deliveryCostsUSD * currentExchangeRate;
       }
     }
     
@@ -452,8 +444,8 @@ const FinancialsPage = () => {
       
       if (shopifyTransactionEnabled) {
         if (shopifyTransactionCurrency === 'USD') {
-          shopifyTransactionFeeTotalUSD = unitsSold * shopifyTransactionFee;
-          shopifyTransactionFeeTotalPEN = shopifyTransactionFeeTotalUSD * exchangeRate;
+        shopifyTransactionFeeTotalUSD = unitsSold * shopifyTransactionFee;
+        shopifyTransactionFeeTotalPEN = shopifyTransactionFeeTotalUSD * exchangeRate;
         } else {
           shopifyTransactionFeeTotalPEN = unitsSold * shopifyTransactionFee;
           shopifyTransactionFeeTotalUSD = shopifyTransactionFeeTotalPEN / exchangeRate;
@@ -537,9 +529,6 @@ const FinancialsPage = () => {
     const revenuePerUnitUSD = sellingPricePerUnit;
     const variableCostsPerUnitUSD = variableCostPerUnit;
     
-    // Legacy calculation for backwards compatibility
-    const totalOperationalCostsPerUnit = (shippingCostsUSD + packagingCostsUSD + deliveryCostsUSD + recurringMonthlyUSD + totalSaleCostsUSD) / unitsSold;
-    
     return {
       grossRevenuePEN,
       grossRevenueUSD,
@@ -584,7 +573,7 @@ const FinancialsPage = () => {
       totalCostPEN,
       unitCostUSD
     };
-  }, [inputs, costBreakdown, recurringExpenses, dynamicCosts]);
+  }, [inputs, costBreakdown, dynamicCosts]);
 
   // Format currency
   const formatCurrency = useCallback((value: number, currency: 'USD' | 'PEN' = 'USD') => {
@@ -598,13 +587,7 @@ const FinancialsPage = () => {
     return `${percentage.toFixed(1)}%`;
   }, []);
 
-  // Convert value based on currency and exchange rate
-  const convertCurrency = useCallback((value: number, fromCurrency: 'USD' | 'PEN', toCurrency: 'USD' | 'PEN') => {
-    if (fromCurrency === toCurrency) return value;
-    if (fromCurrency === 'USD' && toCurrency === 'PEN') return value * inputs.exchangeRate;
-    if (fromCurrency === 'PEN' && toCurrency === 'USD') return value / inputs.exchangeRate;
-    return value;
-  }, [inputs.exchangeRate]);
+
 
   // Create individual currency toggle component
   const CurrencyToggle = ({ currency, setCurrency }: { currency: 'USD' | 'PEN', setCurrency: (currency: 'USD' | 'PEN') => void }) => (
@@ -679,46 +662,7 @@ const FinancialsPage = () => {
     return data;
   }, [financialSummary]);
 
-  // Generate profit vs units data for chart
-  const profitVsUnitsData = useMemo(() => {
-    const data = [];
-    for (let units = 0; units <= 150; units += 10) {
-      const tempInputs = { ...inputs, unitsSold: units };
-      const revenue = (units * tempInputs.unitPricePEN) / tempInputs.exchangeRate;
-      const igv = tempInputs.igvEnabled ? (units * tempInputs.unitPricePEN * tempInputs.igvRate) / 100 / tempInputs.exchangeRate : 0;
-      const netRev = revenue - igv;
-      const fees = (netRev * (tempInputs.mercadoPagoFee + tempInputs.shopifyFee)) / 100 + (units * tempInputs.shopifyTransactionFee);
-      const costs = units * financialSummary.unitCostUSD;
-      const profit = netRev - fees - costs;
-      
-      data.push({
-        units,
-        profit: Math.round(profit)
-      });
-    }
-    return data;
-  }, [inputs, financialSummary.unitCostUSD]);
 
-  // Cost breakdown pie chart data
-  const costPieData = useMemo(() => {
-    return costBreakdown.map((item) => ({
-      name: item.category,
-      value: item.usd,
-      percentage: ((item.usd / financialSummary.totalCostUSD) * 100).toFixed(1)
-    }));
-  }, [costBreakdown, financialSummary.totalCostUSD]);
-
-  // Revenue vs Cost vs Profit bar chart data
-  const revenueVsCostData = [
-    {
-      name: 'Financial Overview',
-      grossRevenue: financialSummary.grossRevenueUSD,
-      totalCost: financialSummary.totalCostUSD,
-      netProfit: financialSummary.netProfitUSD
-    }
-  ];
-
-  const COLORS = ['#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
   const handleInputChange = (field: keyof FinancialInputs, value: number | boolean | string) => {
     setInputs(prev => ({ ...prev, [field]: value }));
@@ -906,14 +850,14 @@ const FinancialsPage = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-gray-300 font-medium mb-2 text-sm">Name</label>
-                          <input
+                    <input
                             type="text"
                             value={newCostName}
                             onChange={(e) => setNewCostName(e.target.value)}
                             placeholder="Cost name..."
                             className="w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-[#2FFFCC] focus:ring focus:ring-[#2FFFCC] focus:ring-opacity-50 p-2 text-sm"
                           />
-                        </div>
+                  </div>
                         
                         <div>
                           <label className="block text-gray-300 font-medium mb-2 text-sm">Category</label>
@@ -988,8 +932,8 @@ const FinancialsPage = () => {
                           <label className="block text-gray-300 font-medium mb-2 text-sm">
                             Value {newCostType === 'percentage' ? '(%)' : newCostType === 'each' ? `(${newCostCurrency} each)` : `(${newCostCurrency})`}
                           </label>
-                          <input
-                            type="number"
+                      <input
+                        type="number"
                             step="0.01"
                             value={newCostValue}
                             onChange={(e) => setNewCostValue(parseFloat(e.target.value) || 0)}
@@ -1016,12 +960,12 @@ const FinancialsPage = () => {
                     <h3 className="text-white font-medium">Custom Costs</h3>
                     {dynamicCosts.map((cost) => (
                       <div key={cost.id} className="flex items-center space-x-4 bg-gray-700/20 p-3 rounded-lg">
-                        <input
-                          type="checkbox"
+                    <input
+                      type="checkbox"
                           checked={cost.enabled}
                           onChange={(e) => updateDynamicCost(cost.id, { enabled: e.target.checked })}
-                          className="rounded bg-gray-700 border-gray-600 text-[#2FFFCC] focus:ring-[#2FFFCC]"
-                        />
+                      className="rounded bg-gray-700 border-gray-600 text-[#2FFFCC] focus:ring-[#2FFFCC]"
+                    />
                         <span className="text-gray-300 flex-1">{cost.name}</span>
                         <span className="text-gray-400 text-sm">({cost.category})</span>
                         <span className="text-gray-300 text-sm">
@@ -1038,7 +982,7 @@ const FinancialsPage = () => {
                         >
                           <X className="w-4 h-4" />
                         </button>
-                      </div>
+                  </div>
                     ))}
                   </div>
                 )}
@@ -1046,13 +990,13 @@ const FinancialsPage = () => {
                 {/* Custom Exchange Rate Toggle */}
                 <div className="space-y-3 border-b border-gray-600 pb-4">
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
+                        <input
+                          type="checkbox"
                       id="customExchangeRates"
                       checked={inputs.customExchangeRatesEnabled}
                       onChange={(e) => handleInputChange('customExchangeRatesEnabled', e.target.checked)}
-                      className="rounded bg-gray-700 border-gray-600 text-[#2FFFCC] focus:ring-[#2FFFCC]"
-                    />
+                          className="rounded bg-gray-700 border-gray-600 text-[#2FFFCC] focus:ring-[#2FFFCC]"
+                        />
                     <label htmlFor="customExchangeRates" className="text-white font-medium">Add Custom XR to Each Cost</label>
                   </div>
                   {inputs.customExchangeRatesEnabled && (
@@ -1062,26 +1006,26 @@ const FinancialsPage = () => {
                       </p>
                     </div>
                   )}
-                </div>
-                
+                      </div>
+                      
                 {/* COGS Section */}
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
+                        <input
+                          type="checkbox"
                       id="cogs"
                       checked={inputs.cogsEnabled}
                       onChange={(e) => handleInputChange('cogsEnabled', e.target.checked)}
-                      className="rounded bg-gray-700 border-gray-600 text-[#2FFFCC] focus:ring-[#2FFFCC]"
-                    />
+                          className="rounded bg-gray-700 border-gray-600 text-[#2FFFCC] focus:ring-[#2FFFCC]"
+                        />
                     <label htmlFor="cogs" className="text-white font-medium">COGS (Cost of Goods Sold)</label>
                   </div>
                   {inputs.cogsEnabled && (
                     <div className="ml-6 space-y-2">
                       <div className="flex items-center space-x-4 flex-wrap">
                         <label className="text-gray-300">Amount</label>
-                        <input
-                          type="number"
+                          <input
+                            type="number"
                           step="0.01"
                           value={inputs.cogsAmount}
                           onChange={(e) => handleInputChange('cogsAmount', parseFloat(e.target.value) || 0)}
@@ -1094,9 +1038,9 @@ const FinancialsPage = () => {
                         {inputs.customExchangeRatesEnabled && (
                           <>
                             <label className="text-gray-400 text-xs">XR:</label>
-                            <input
-                              type="number"
-                              step="0.01"
+                          <input
+                            type="number"
+                            step="0.01"
                               value={inputs.cogsCustomExchangeRate}
                               onChange={(e) => handleInputChange('cogsCustomExchangeRate', parseFloat(e.target.value) || 0)}
                               className="w-16 rounded-md bg-gray-600 border-gray-500 text-white shadow-sm focus:border-[#2FFFCC] focus:ring focus:ring-[#2FFFCC] focus:ring-opacity-50 p-1 text-xs"
@@ -1113,7 +1057,7 @@ const FinancialsPage = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Shipping Costs Section */}
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
@@ -1818,7 +1762,7 @@ const FinancialsPage = () => {
         {/* Cascade/Waterfall Chart */}
         <div className="bg-gray-800 rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold text-white mb-6 flex items-center">
-            <TrendingUp className="w-6 h-6 mr-2 text-[#2FFFCC]" />
+            <DollarSign className="w-6 h-6 mr-2 text-[#2FFFCC]" />
             Financial Cascade
           </h2>
           <div className="h-96">
@@ -1917,7 +1861,7 @@ const FinancialsPage = () => {
           <h2 className="text-xl font-bold mb-4 text-white flex items-center">
             <Calculator className="w-6 h-6 mr-3 text-[#2FFFCC]" />
             Breakeven Analysis
-          </h2>
+            </h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Scenario Analysis */}
@@ -1958,11 +1902,11 @@ const FinancialsPage = () => {
                         <div>
                           <p className="text-gray-400">Variable Cost/Unit</p>
                           <p className="text-white font-semibold">{formatCurrency(variableCost, 'USD')}</p>
-                        </div>
+                </div>
                         <div>
                           <p className="text-gray-400">Contribution Margin</p>
                           <p className="text-white font-semibold">{formatCurrency(contributionAfterTax, 'USD')}</p>
-                        </div>
+              </div>
                         <div>
                           <p className="text-gray-400">Breakeven Units</p>
                           <p className="text-[#2FFFCC] font-bold">{breakevenUnits} units</p>
@@ -1978,19 +1922,19 @@ const FinancialsPage = () => {
                           <p className={`font-semibold ${profitAt50 >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {formatCurrency(profitAt50, 'USD')}
                           </p>
-                        </div>
+              </div>
                         <div>
                           <p className="text-gray-400">Profit @ 100 units</p>
                           <p className={`font-semibold ${profitAt100 >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {formatCurrency(profitAt100, 'USD')}
                           </p>
-                        </div>
+            </div>
                       </div>
                     </div>
                   );
                 });
               })()}
-            </div>
+        </div>
 
             {/* Summary Table */}
             <div className="bg-gray-700/30 p-4 rounded-lg">
@@ -2031,8 +1975,8 @@ const FinancialsPage = () => {
                     );
                   });
                 })()}
-              </div>
-              
+          </div>
+
               {/* Key Metrics */}
               <div className="mt-6 p-3 bg-[#2FFFCC]/10 rounded border border-[#2FFFCC]/30">
                 <h4 className="text-white font-semibold mb-2">🎯 Current Position</h4>
@@ -2059,8 +2003,8 @@ const FinancialsPage = () => {
                   </div>
                 </div>
               </div>
-            </div>
           </div>
+        </div>
 
           {/* Profitability Timeline */}
           <div className="mt-6 bg-gray-700/30 p-4 rounded-lg">
